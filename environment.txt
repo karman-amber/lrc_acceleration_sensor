@@ -1,0 +1,16 @@
+# 安装miniconda 网址为 https://docs.anaconda.com/miniconda/miniconda-other-installer-links/
+
+# 创建虚拟环境
+conda create -n lrc python=3.10
+# 激活虚拟环境
+conda activate lrc
+# 安装各种模块
+conda install pyserial
+conda install numpy
+conda install pandas
+conda install psutil
+# 安装MQTT中间件
+sudo apt-get install mosquitto
+# 安装MQTT客户端
+pip install paho-mqtt==1.6.1
+

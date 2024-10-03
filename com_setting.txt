@@ -1,0 +1,13 @@
+# 使用udev规则固定USB名称和权限
+# 1. 创建udev规则文件
+sudo nano /etc/udev/rules.d/70-my-usb-device.rules
+# 2. 添加规则
+# 当USB设备ID为1a86:7523时，将设备节点链接到/dev/ttyUSB0，并且权限设置为666，用户组为dialout, 名称固定为ttyUSB_LRC
+# 注意：请将1a86和7523替换为您的USB设备的实际ID
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", MODE="0666", GROUP="dialout", SYMLINK+="ttyUSB_LRC"
+# 3. 重新加载udev规则
+sudo udevadm control --reload-rules
+# 4. 检查USB设备是否已被正确链接和命名
+ls -l /dev/ttyUSB0
+# 输出应为
+crw-rw-rw- 1 root dialout 188, 0 Jan  1 00:00 /dev/ttyUSB0
