@@ -75,7 +75,7 @@ class MqttClient:
             def on_message2(client2, userdata, msg):
                 if self.queue.qsize() >= queue_max_count:
                     self.queue.get(block=False)
-                self.queue.put(msg.payload.decode())
+                self.queue.put(float(msg.payload.decode()))
 
             self.mqtt_client.on_message = on_message2
 

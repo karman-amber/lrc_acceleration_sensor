@@ -123,7 +123,10 @@ class Sensor:
             self.z.get()
             self.r.get()
         if self.mqtt is not None:
-            self.mqtt.publish(f"{x},{y},{z},{r}", topic="lrc/sensor")
+            self.mqtt.publish(f"{x}", topic="lrc/sensor/x")
+            self.mqtt.publish(f"{y}", topic="lrc/sensor/y")
+            self.mqtt.publish(f"{z}", topic="lrc/sensor/z")
+            self.mqtt.publish(f"{r}", topic="lrc/sensor/r")
         self.x.put(x)
         self.y.put(y)
         self.z.put(z)
