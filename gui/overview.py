@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 class DynamicLineChart(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Vibration Line Chart with Matplotlib")
+        self.setWindowTitle("加速度实时曲线")
         self.setGeometry(100, 100, 800, 600)
 
         layout = QVBoxLayout()

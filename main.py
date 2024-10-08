@@ -7,8 +7,8 @@ from qtpy import QtWidgets
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
-from lrc_main import Ui_MainWindow
-from overview import DynamicLineChart
+from gui.lrc_main import Ui_MainWindow
+from gui.overview import DynamicLineChart
 
 
 class ManagerWindow(QMainWindow):
