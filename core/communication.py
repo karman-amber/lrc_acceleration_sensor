@@ -19,14 +19,15 @@ class Com:
             self.serial = None
 
     def auto_search(self):
-        if self.serial is None:
-            try:
-                self.serial = self.get_v_serial()
-            except serial.SerialException as e:
-                self.serial = None
-                debug(e)
-                return False
-        return True
+        if self.serial is not None:
+            self.serial.close()
+        try:
+            self.serial = self.get_v_serial()
+        except serial.SerialException as e:
+            self.serial = None
+            debug(e)
+            return False
+        return self.serial is not None
 
     def send_data(self, data):
         try:
@@ -138,7 +139,7 @@ class Com:
     def get_data(self, interval=10):
         self.clear()
         header = b'\x55\xbb'
-        line = self.serial.read(self.serial.in_waiting)
+        line = self.__read__()
         index = line.find(header)
         line = line[index:]
         while True:
@@ -147,8 +148,20 @@ class Com:
                 yield line[:end]
                 line = line[end:]
                 end = line.find(header, 1)
-            line += self.serial.read(self.serial.in_waiting)
+            line += self.__read__()
             time.sleep(interval / 1000)
+
+    def __read__(self):
+        line = None
+        try:
+            line = self.serial.read(self.serial.in_waiting)
+        except Exception as ex:
+            debug(ex)
+            self.auto_search()
+        if line is None:
+            time.sleep(1)
+            return self.__read__()
+        return line
 
     def get_work_mode(self):
         if self.is_running():

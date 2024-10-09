@@ -182,7 +182,7 @@ class Sensor:
 if __name__ == '__main__':
     v = Sensor("主轴1")
     v.com.auto_search()
-    v.set_mqtt("127.0.0.1", 1886)
+    v.set_mqtt("127.0.0.1", 1883)
     v.run()
     time.sleep(1000)
     v.stop()
