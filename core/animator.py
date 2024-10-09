@@ -33,7 +33,7 @@ class GeneratorDataSource(DataSource):
 
 
 class AnimatedLine:
-    def __init__(self, ax, color: str = 'blue', max_points: int = 200):
+    def __init__(self, ax, color: str = 'blue', max_points: int = 500):
         self.line, = ax.plot([], [], color=color)
         self.xdata, self.ydata = [], []
         self.max_points = max_points
@@ -69,6 +69,8 @@ class Animator:
         if self._is_running:
             try:
                 x, y = self.data_source.get_data()
+                # self.set_xlim(np.min(x), np.max(x))
+                # self.set_ylim(np.min(y), np.max(y))
                 return self.animated_line.update(x, y)
             except Exception as e:
                 print(f"Error updating animation: {e}")
@@ -118,8 +120,8 @@ def example_with_generator():
     data_source = GeneratorDataSource(sine_generator())
     animator = Animator(data_source, max_frames=200)
 
-    animator.set_xlim(0, 10)
-    animator.set_ylim(-1, 1)
+    animator.set_xlim(0, 500)
+    animator.set_ylim(-2, 2)
 
     animator.setup_animation()
     animator.start()

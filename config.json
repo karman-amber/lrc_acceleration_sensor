@@ -12,7 +12,7 @@
       "y": 50,
       "z": 50,
       "r": 50,
-      "rmse": 50
+      "rmse": 2
     },
     "halt_reset_seconds": 5,
     "switches": {
