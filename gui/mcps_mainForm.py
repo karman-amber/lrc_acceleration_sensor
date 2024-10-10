@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QMdiArea, QMdiSubWindow)
 from PyQt5.QtCore import Qt
 from gui.overview import DynamicLineChart
+from gui.alarms import AlarmViewer
 
 
 class SubWindow(QWidget):
@@ -75,7 +76,7 @@ class MainWindow(QMainWindow):
 
         recent_event_action = QAction('最近碰撞', self)
         # recent_event_action.setShortcut('Ctrl+H')
-        # recent_event_action.triggered.connect(self.recent_event)
+        recent_event_action.triggered.connect(self.recent_event)
         home_menu.addAction(recent_event_action)
 
         home_menu.addSeparator()
@@ -104,7 +105,7 @@ class MainWindow(QMainWindow):
         toolbar = QToolBar()
         self.addToolBar(toolbar)
         toolbar.addAction(overview_action)
-        toolbar.addAction(overview_action)
+        toolbar.addAction(recent_event_action)
 
         # 创建状态栏
         self.statusBar().showMessage('就绪')
@@ -136,6 +137,12 @@ class MainWindow(QMainWindow):
         overview.show()
         return True
 
+    def recent_event(self):
+        current_form = AlarmViewer()
+        self.setCentralWidget(current_form)
+        current_form.show()
+        return True
+
     def showDialog(self):
         dialog = CustomDialog()
         result = dialog.exec_()
@@ -143,7 +150,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage('对话框已确认')
 
     def showAbout(self):
-        QMessageBox.about(self, '关于', '这是一个PyQt5 MDI示例程序\n展示了多文档界面的基本功能')
+        QMessageBox.about(self, '关于', '碰撞保护系统1.0 版本\n 版权所有 © 2024')
         self.statusBar().showMessage('显示关于信息')
 
 
