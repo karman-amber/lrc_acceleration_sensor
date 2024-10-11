@@ -6,8 +6,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QToolBar, QStatusBar, QDialog, QMessageBox,
                              QMdiArea, QMdiSubWindow)
 from PyQt5.QtCore import Qt
-from gui.overview import DynamicLineChart
+from gui.overview import DynamicPlot
 from gui.alarms import AlarmViewer
+from core.mqtt import MqttClient
 
 
 class SubWindow(QWidget):
@@ -49,6 +50,9 @@ class MainWindow(QMainWindow):
         self.central_widget = None
         self.subwindow_count = 0
         self.initUI()
+        self.mqtt = MqttClient()
+        self.mqtt.connect("172.8.8.229", 1883)
+        self.mqtt.start_subscribe()
 
     def initUI(self):
         # 设置主窗口
@@ -132,7 +136,7 @@ class MainWindow(QMainWindow):
             event.ignore()
 
     def overview(self):
-        overview = DynamicLineChart()
+        overview = DynamicPlot(self.mqtt)
         self.setCentralWidget(overview)
         overview.show()
         return True
