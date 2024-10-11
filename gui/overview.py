@@ -9,8 +9,12 @@ from core.mqtt import MqttClient
 class DynamicPlot(QWidget):
     def __init__(self, mqtt):
         super().__init__()
+        self.data = [0] * 1
         self.setWindowTitle('碰撞保护实时数据图')
         self.topic = "lrc/sensor/x"
+        self.mqtt = mqtt
+        self.max_data = 0
+        self.min_data = 0
 
         # 创建下拉框
         self.comboBox = QComboBox()
@@ -19,20 +23,12 @@ class DynamicPlot(QWidget):
 
         # 创建PlotWidget实例
         self.plotWidget = pg.PlotWidget()
-        self.plotWidget.setBackground('w')  # 设置背景颜色为白色
-
-        # 初始化数据
-        self.data = [0] * 100
+        self.plotWidget.setBackground('black')  # 设置背景颜色为白色
 
         # 绘制初始曲线
-        self.plot = self.plotWidget.plot(self.data, pen='r')
-
-        # 设置坐标轴
-        self.plotWidget.setLabel('left', "Y轴")
-        self.plotWidget.setLabel('bottom', "X轴")
-
-        # 设置标题
-        self.plotWidget.setTitle("实时数据曲线")
+        self.plot = self.plotWidget.plot(self.data, pen='yellow')
+        # 初始化数据
+        self.change_topic("x")
 
         # 创建定时器
         self.timer = QTimer()
@@ -44,29 +40,52 @@ class DynamicPlot(QWidget):
         layout.addWidget(self.comboBox)
         layout.addWidget(self.plotWidget)
         self.setLayout(layout)
-        self.mqtt = mqtt
 
     def change_plot_type(self, index):
         # 根据下拉框的索引选择不同的数据源
         if index == 0:
-            self.topic = "lrc/sensor/x"
+            self.change_topic("x")
         elif index == 1:
-            self.topic = "lrc/sensor/y"
+            self.change_topic("y")
         elif index == 2:
-            self.topic = "lrc/sensor/z"
+            self.change_topic("z")
         elif index == 3:
-            self.topic = "lrc/sensor/r"
+            self.change_topic("r")
         else:
-            self.topic = "lrc/sensor/x"
+            self.change_topic("x")
+
+    def change_topic(self, topic):
+        self.topic = "lrc/sensor/" + topic
+        self.plotWidget.setLabel('left', f"{topic}轴加速度")
+        self.plotWidget.setLabel('bottom', "时间")
+        self.plotWidget.setTitle(f"{topic}轴实时数据曲线")
+        # self.plotWidget.plotItem.getAxis('left').setPen('yellow')
+        # self.plotWidget.plotItem.getAxis('left').setLabel
+        # self.plotWidget.plotItem.getAxis('bottom').setPen('yellow')
         self.data.clear()
-        self.data = [0] * 100
-        for i in range(100):
-            self.data.append(self.mqtt.queues[self.topic].get())
+        self.max_data = -50
+        self.min_data = 50
+        # self.data = [0] * 1
+        if self.mqtt.queues[self.topic].empty():
+            self.plotWidget.setTitle(f"{topic}轴实时数据曲线-已暂停")
+        else:
+            for i in range(100):
+                self.data.append(self.mqtt.queues[self.topic].get())
+
         self.plot.setData(self.data)
 
     def update_plot(self):
         # 更新数据
-        self.data.append(self.mqtt.queues[self.topic].get())
+        if self.mqtt.queues[self.topic].empty():
+            self.plotWidget.setTitle(f"{self.topic[-1:]}轴实时数据曲线-已暂停")
+        else:
+            data = self.mqtt.queues[self.topic].get()
+            if data > self.max_data:
+                self.max_data = data
+            if data < self.min_data:
+                self.min_data = data
+            self.data.append(data)
+            self.plotWidget.setTitle(f"{self.topic[-1:]}轴实时数据曲线({round(self.min_data, 2)}至{round(self.max_data, 2)})")
         if len(self.data) > 100:
             self.data.pop(0)
 
