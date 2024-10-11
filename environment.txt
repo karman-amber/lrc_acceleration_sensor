@@ -10,6 +10,9 @@ conda install numpy
 conda install pandas
 conda install psutil
 conda install attrs
+conda install pyqtgraph
+pip install PyQt5
+pip install matplotlib
 # 安装MQTT中间件
 sudo apt-get install mosquitto
 # 安装MQTT客户端
