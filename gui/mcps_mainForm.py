@@ -45,14 +45,15 @@ class CustomDialog(QDialog):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, mqtt_client, http_client):
         super().__init__()
         self.central_widget = None
         self.subwindow_count = 0
         self.initUI()
-        self.mqtt = MqttClient()
-        self.mqtt.connect("172.8.8.229", 1883)
-        self.mqtt.start_subscribe()
+        self.mqtt = mqtt_client
+        self.http_client = http_client
+        # self.mqtt.connect("172.8.8.229", 1883)
+        # self.mqtt.start_subscribe()
 
     def initUI(self):
         # 设置主窗口
