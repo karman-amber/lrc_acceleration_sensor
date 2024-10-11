@@ -13,7 +13,7 @@ conda install attrs
 conda install pyqtgraph
 pip install PyQt5
 pip install matplotlib
-pip install flask
+pip install flask -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/
 pip install flask-cors
 pip install requests
 
