@@ -33,7 +33,7 @@ class MqttClient:
         self.id = f"lrc{int(random.random() * 10000)}"
         self.status = "offline"
         self.thread = None
-        self.queue = queue.Queue()
+        self.queues = dict()
 
     def connect(self, ip, port, user=None, password=None):
         if self.mqtt_client is None:
@@ -66,19 +66,22 @@ class MqttClient:
             debug("无法发送消息，MQTT客户端未连接")
         return False
 
-    def start_subscribe(self, topic=None, queue_max_count=100):
+    def start_subscribe(self, topics=None, queue_max_count=200):
         if self.thread is None:
-            if topic is None:
-                topic = self.topic
-            self.mqtt_client.subscribe(topic)
+            if topics is None:
+                topics = ["lrc/sensor/x", "lrc/sensor/y", "lrc/sensor/z", "lrc/sensor/r"]
+            for topic in topics:
+                self.mqtt_client.subscribe(topic)
 
             def on_message2(client2, userdata, msg):
-                if self.queue.qsize() >= queue_max_count:
-                    self.queue.get(block=False)
-                self.queue.put(float(msg.payload.decode()))
-
+                mst_data = float(msg.payload.decode())
+                msg_topic = msg.topic
+                if msg_topic not in self.queues:
+                    self.queues[msg_topic] = queue.Queue()
+                if self.queues[msg_topic].qsize() >= queue_max_count:
+                    self.queues[msg_topic].get(block=False)
+                self.queues[msg_topic].put(mst_data)
             self.mqtt_client.on_message = on_message2
-
             self.thread = threading.Thread(target=self.mqtt_client.loop_start())
             self.thread.start()
 
