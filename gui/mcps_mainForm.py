@@ -132,6 +132,7 @@ class MainWindow(QMainWindow):
         # 判断是否点击的Yes按钮
         if result == QtWidgets.QMessageBox.Yes:
             event.accept()
+            self.mqtt.stop_subscribe()
         else:
             event.ignore()
 
