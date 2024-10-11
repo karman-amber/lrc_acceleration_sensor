@@ -1,9 +1,7 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox
+
+from PyQt5.QtWidgets import  QWidget, QVBoxLayout, QComboBox
 from PyQt5.QtCore import QTimer
 import pyqtgraph as pg
-import random
-from core.mqtt import MqttClient
 
 
 class DynamicPlot(QWidget):
@@ -23,7 +21,7 @@ class DynamicPlot(QWidget):
 
         # 创建PlotWidget实例
         self.plotWidget = pg.PlotWidget()
-        self.plotWidget.setBackground('black')  # 设置背景颜色为白色
+        self.plotWidget.setBackground('black')  # 设置背景颜色为黑色
 
         # 绘制初始曲线
         self.plot = self.plotWidget.plot(self.data, pen='yellow')
