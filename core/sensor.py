@@ -79,6 +79,8 @@ class Sensor:
                         alarm_type, alarm_name, alarm_value, alarm_limit = line
                         names = {0: "x", 1: "y", 2: "z", 3: "rmse"}
                         alarm_name = names[alarm_name]
+                        if self.mqtt is not None:
+                            self.mqtt.publish(f"{alarm_value}", topic=f"lrc/sensor/{alarm_name[0]}")
                         if self.alarm is None:  # 新建报警对象
                             self.alarm = Alarm()
                             self.alarm.category = alarm_type
