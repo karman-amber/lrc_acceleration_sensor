@@ -66,7 +66,7 @@ class DynamicPlot(QWidget):
         self.max_data = -50
         self.min_data = 50
         # self.data = [0] * 1
-        if self.mqtt.queues[self.topic].empty():
+        if self.topic not in self.mqtt.queues or self.mqtt.queues[self.topic].empty():
             self.plotWidget.setTitle(f"{topic}轴实时数据曲线-已暂停")
         else:
             for i in range(100):
@@ -76,7 +76,7 @@ class DynamicPlot(QWidget):
 
     def update_plot(self):
         # 更新数据
-        if self.mqtt.queues[self.topic].empty():
+        if self.topic not in self.mqtt.queues or self.mqtt.queues[self.topic].empty():
             self.plotWidget.setTitle(f"{self.topic[-1:]}轴实时数据曲线-已暂停")
         else:
             data = self.mqtt.queues[self.topic].get()
