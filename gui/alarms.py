@@ -3,12 +3,14 @@
 
 import sys
 import pandas as pd
+from PyQt5 import QtGui
 from PyQt5.QtWidgets import (QApplication, QWidget, QTableWidget, QTableWidgetItem,
                              QVBoxLayout, QDialog, QLabel, QGridLayout)
 from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from web_api.lrc_client import LrcClient
 
 
 class DetailDialog(QDialog):
@@ -77,20 +79,36 @@ class AlarmViewer(QWidget):
 
     def loadCSV(self, filename):
         try:
-            df = pd.read_csv(filename)
-            df = df.sort_index(ascending=False)
+            # df = pd.read_csv(filename)
+            client = LrcClient()
+            # df = df.sort_index(ascending=False)
+            data = client.get_data()
+            columns = client.get_columns()
+            if data is None:
+                return
+            df = pd.DataFrame(data['data'])
+            # model = QtGui.QStandardItemModel()
+            # # 将 DataFrame 的数据填充到 QStandardItemModel 中
+            # for row in df.iterrows():
+            #     index = 0
+            #     for col_name in columns:
+            #         item = QtGui.QStandardItem(str(row[1][col_name]))
+            #         model.setItem(row[0], index, item)
+            #         index += 1
+            #
+            # self.table.setModel(model)
             self.table.setRowCount(df.shape[0])
             self.table.setColumnCount(df.shape[1] - 1)
-            self.table.setHorizontalHeaderLabels(df.columns[:-1])
-
+            self.table.setHorizontalHeaderLabels(columns[:-1])
             for row in range(df.shape[0]):
-                for col in range(df.shape[1] - 1):
-                    item = QTableWidgetItem(str(df.iloc[row, col]))
-                    self.table.setItem(row, col, item)
+                index = 0
+                for col in columns:
+                    item = QTableWidgetItem(str(df.iloc[row][col]))
+                    self.table.setItem(row, index, item)
+                    index += 1
 
             self.table.resizeColumnsToContents()
             self.df = df  # 保存DataFrame以供后续使用
-
         except Exception as e:
             print(f"加载CSV文件时出错: {str(e)}")
 

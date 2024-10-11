@@ -13,6 +13,10 @@ conda install attrs
 conda install pyqtgraph
 pip install PyQt5
 pip install matplotlib
+pip install flask
+pip install flask-cors
+pip install requests
+
 # 安装MQTT中间件
 sudo apt-get install mosquitto
 # 安装MQTT客户端
