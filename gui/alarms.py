@@ -3,14 +3,14 @@
 
 import sys
 import pandas as pd
-from PyQt5 import QtGui
+# from PyQt5 import QtGui
 from PyQt5.QtWidgets import (QApplication, QWidget, QTableWidget, QTableWidgetItem,
                              QVBoxLayout, QDialog, QLabel, QGridLayout)
-from PyQt5.QtCore import Qt
+# from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from web_api.lrc_client import LrcClient
+# from web_api.lrc_client import LrcClient
 
 
 class DetailDialog(QDialog):
@@ -34,7 +34,7 @@ class DetailDialog(QDialog):
         last_column_key = list(row_data.keys())[-1]
         last_column_data = row_data[last_column_key]
         try:
-            data_array = [int(x)/100 for x in last_column_data.split('-')]
+            data_array = [int(x) / 100 for x in last_column_data.split('-')]
 
             # 创建图表
             plt.rcParams['font.family'] = 'SimHei'  # 设置字体为黑体
@@ -59,8 +59,11 @@ class DetailDialog(QDialog):
 
 
 class AlarmViewer(QWidget):
-    def __init__(self):
+    def __init__(self, father=None):
         super().__init__()
+        self.father = father
+        self.df = None
+        self.columns = None
         self.initUI()
 
     def initUI(self):
@@ -75,42 +78,40 @@ class AlarmViewer(QWidget):
         self.setLayout(layout)
 
         # 加载CSV数据
-        self.loadCSV('../db/lrc_alarm.csv')  # 替换为您的CSV文件路径
+        if self.father is None or self.father.http_client is None:
+            df, columns = self.load_local_alarm()
+        else:
+            df, columns = self.load_remote_alarm()
+        self.show_alarm(df, columns)
 
-    def loadCSV(self, filename):
-        try:
-            # df = pd.read_csv(filename)
-            client = LrcClient()
-            # df = df.sort_index(ascending=False)
-            data = client.get_data()
-            columns = client.get_columns()
-            if data is None:
-                return
-            df = pd.DataFrame(data['data'])
-            # model = QtGui.QStandardItemModel()
-            # # 将 DataFrame 的数据填充到 QStandardItemModel 中
-            # for row in df.iterrows():
-            #     index = 0
-            #     for col_name in columns:
-            #         item = QtGui.QStandardItem(str(row[1][col_name]))
-            #         model.setItem(row[0], index, item)
-            #         index += 1
-            #
-            # self.table.setModel(model)
-            self.table.setRowCount(df.shape[0])
-            self.table.setColumnCount(df.shape[1] - 1)
-            self.table.setHorizontalHeaderLabels(columns[:-1])
-            for row in range(df.shape[0]):
-                index = 0
-                for col in columns:
-                    item = QTableWidgetItem(str(df.iloc[row][col]))
-                    self.table.setItem(row, index, item)
-                    index += 1
+    def load_remote_alarm(self):
+        data = self.father.http_client.get_data(page=1, per_page=25)
+        columns = self.father.http_client.get_columns()
+        if data is None:
+            return
+        df = pd.DataFrame(data['data'])
+        return df, columns
 
-            self.table.resizeColumnsToContents()
-            self.df = df  # 保存DataFrame以供后续使用
-        except Exception as e:
-            print(f"加载CSV文件时出错: {str(e)}")
+    def load_local_alarm(self):
+        # 读取本地CSV文件
+        filename = 'db/lrc_alarm.csv'
+        df = pd.read_csv(filename)
+        columns = df.columns.tolist()
+        return df, columns
+
+    def show_alarm(self, df, columns):
+        self.table.setRowCount(df.shape[0])
+        self.table.setColumnCount(df.shape[1] - 1)
+        self.table.setHorizontalHeaderLabels(columns[:-1])
+        for row in range(df.shape[0]):
+            index = 0
+            for col in columns:
+                item = QTableWidgetItem(str(df.iloc[row][col]))
+                self.table.setItem(row, index, item)
+                index += 1
+        self.table.resizeColumnsToContents()
+        self.df = df  # 保存DataFrame以供后续使用
+        self.columns = columns
 
     def showDetail(self, item):
         row = item.row()

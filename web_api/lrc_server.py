@@ -3,9 +3,13 @@
 from flask import Flask, jsonify, request
 import pandas as pd
 from flask_cors import CORS
+import os
+import json
 
 app = Flask(__name__)
 CORS(app)  # 启用CORS，允许跨域请求
+
+JSON_FILE_PATH = 'config.json'
 
 
 # 加载CSV文件
@@ -73,6 +77,31 @@ def get_columns():
     return jsonify({
         'columns': list(df.columns)
     })
+
+
+def read_json_file():
+    if not os.path.exists(JSON_FILE_PATH):
+        return {}
+    with open(JSON_FILE_PATH, 'r') as file:
+        return json.load(file)
+
+
+def write_json_file(data):
+    with open(JSON_FILE_PATH, 'w') as file:
+        json.dump(data, file, indent=4)
+
+
+@app.route('/api/json', methods=['GET'])
+def get_json():
+    data = read_json_file()
+    return jsonify(data)
+
+
+@app.route('/api/json', methods=['POST'])
+def update_json():
+    data = request.json
+    write_json_file(data)
+    return jsonify({"status": "success"})
 
 
 if __name__ == '__main__':

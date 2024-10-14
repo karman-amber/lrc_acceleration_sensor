@@ -1,6 +1,7 @@
 import sys
 
 from PyQt5 import QtWidgets
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QLabel, QPushButton, QMenuBar, QMenu, QAction,
                              QToolBar, QStatusBar, QDialog, QMessageBox,
@@ -8,7 +9,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PyQt5.QtCore import Qt
 from gui.overview import DynamicPlot
 from gui.alarms import AlarmViewer
-from core.mqtt import MqttClient
+# from core.mqtt import MqttClient
+from gui.setting import SettingEditorWidget
 
 
 class SubWindow(QWidget):
@@ -49,6 +51,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.central_widget = None
         self.subwindow_count = 0
+        self.setWindowIcon(QIcon('gui/cps-icon.svg'))
         self.initUI()
         self.mqtt = mqtt_client
         self.http_client = http_client
@@ -68,9 +71,10 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         home_menu = menubar.addMenu('主页')
         threshold_menu = menubar.addMenu('监控阈值')
-        setting_menu = menubar.addMenu("系统设置")
+
         data_menu = menubar.addMenu("数据管理")
         diagnostic_menu = menubar.addMenu("在线诊断")
+        setting_menu = menubar.addMenu('系统设置')
         help_menu = menubar.addMenu('帮助手册')
 
         # 创建菜单项
@@ -83,6 +87,13 @@ class MainWindow(QMainWindow):
         # recent_event_action.setShortcut('Ctrl+H')
         recent_event_action.triggered.connect(self.recent_event)
         home_menu.addAction(recent_event_action)
+
+        ui_setting_action = QAction('交互系统设置', self)
+        ui_setting_action.triggered.connect(self.ui_setting)
+        setting_menu.addAction(ui_setting_action)
+        acc_setting_action = QAction('监控系统设置', self)
+        acc_setting_action.triggered.connect(self.acc_setting)
+        setting_menu.addAction(acc_setting_action)
 
         home_menu.addSeparator()
         exit_action = QAction("退出", self)
@@ -144,7 +155,19 @@ class MainWindow(QMainWindow):
         return True
 
     def recent_event(self):
-        current_form = AlarmViewer()
+        current_form = AlarmViewer(self)
+        self.setCentralWidget(current_form)
+        current_form.show()
+        return True
+
+    def ui_setting(self):
+        current_form = SettingEditorWidget(self)
+        self.setCentralWidget(current_form)
+        current_form.show()
+        return True
+
+    def acc_setting(self):
+        current_form = SettingEditorWidget(self)
         self.setCentralWidget(current_form)
         current_form.show()
         return True
@@ -158,7 +181,6 @@ class MainWindow(QMainWindow):
     def showAbout(self):
         QMessageBox.about(self, '关于', '碰撞保护系统1.0 版本\n 版权所有 © 2024')
         self.statusBar().showMessage('显示关于信息')
-
 
 # def main():
 #     app = QApplication(sys.argv)
