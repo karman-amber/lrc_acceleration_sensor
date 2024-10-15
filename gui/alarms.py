@@ -5,7 +5,7 @@ import sys
 import pandas as pd
 # from PyQt5 import QtGui
 from PyQt5.QtWidgets import (QApplication, QWidget, QTableWidget, QTableWidgetItem,
-                             QVBoxLayout, QDialog, QLabel, QGridLayout)
+                             QVBoxLayout, QDialog, QLabel, QGridLayout, QSizePolicy)
 # from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -73,6 +73,8 @@ class AlarmViewer(QWidget):
         layout = QVBoxLayout()
         self.table = QTableWidget()
         self.table.itemDoubleClicked.connect(self.showDetail)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(self.table)
 
         self.setLayout(layout)
@@ -127,5 +129,5 @@ def main():
     sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
