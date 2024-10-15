@@ -10,13 +10,14 @@ app = Flask(__name__)
 CORS(app)  # 启用CORS，允许跨域请求
 
 JSON_FILE_PATH = 'config.json'
+DB_FILE_PATH = 'db/lrc_alarm.csv'
 
 
 # 加载CSV文件
 def load_csv():
     try:
         # 假设CSV文件名为data.csv，在同一目录下
-        df = pd.read_csv('../db/lrc_alarm.csv')
+        df = pd.read_csv(DB_FILE_PATH, encoding='utf-8')
         return df
     except Exception as e:
         print(f"Error loading CSV: {e}")
@@ -82,12 +83,12 @@ def get_columns():
 def read_json_file():
     if not os.path.exists(JSON_FILE_PATH):
         return {}
-    with open(JSON_FILE_PATH, 'r') as file:
+    with open(JSON_FILE_PATH, 'r', encoding='utf-8') as file:
         return json.load(file)
 
 
 def write_json_file(data):
-    with open(JSON_FILE_PATH, 'w') as file:
+    with open(JSON_FILE_PATH, 'w', encoding='utf-8') as file:
         json.dump(data, file, indent=4)
 
 
@@ -105,4 +106,4 @@ def update_json():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)
