@@ -22,3 +22,7 @@ sudo apt-get install mosquitto
 # 安装MQTT客户端
 pip install paho-mqtt==1.6.1
 
+# 如果需要远程vnc运行交互程序
+sudo apt-get update
+sudo apt-get install xorg libxcb-xinerama0
+
