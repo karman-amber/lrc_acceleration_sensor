@@ -30,6 +30,38 @@ class LrcClient:
             print(f"Error fetching columns: {e}")
             return None
 
+    def update_json(self, data):
+        """
+        向服务器发送POST请求以更新JSON数据
+
+        :param data: 要发送的JSON数据
+        :return: 是否更新成功
+        """
+        url = f"{self.base_url}/api/json"
+
+        try:
+            response = requests.post(url, json=data)
+            response.raise_for_status()  # 如果响应状态码不是200，将引发异常
+            return True
+        except requests.RequestException as e:
+            print(f"更新JSON数据时发生错误: {str(e)}")
+            return False
+
+    def download_json(self):
+        """
+        从服务器下载JSON数据
+        :return: 包含JSON数据的字典，或者在发生异常时返回None
+        """
+        url = f"{self.base_url}/api/json"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return response.json()
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching json: {e}")
+            return None
+
     def display_data(self, data):
         if not data or 'data' not in data:
             print("No data to display")
