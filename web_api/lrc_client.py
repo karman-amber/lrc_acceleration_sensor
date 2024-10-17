@@ -30,7 +30,7 @@ class LrcClient:
             print(f"Error fetching columns: {e}")
             return None
 
-    def update_json(self, data):
+    def upload_json(self, data):
         """
         向服务器发送POST请求以更新JSON数据
 

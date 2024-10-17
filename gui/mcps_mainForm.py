@@ -55,6 +55,7 @@ class MainWindow(QMainWindow):
         self.initUI()
         self.mqtt = mqtt_client
         self.http_client = http_client
+        self.setting_form = None
         # self.mqtt.connect("172.8.8.229", 1883)
         # self.mqtt.start_subscribe()
 
@@ -161,15 +162,21 @@ class MainWindow(QMainWindow):
         return True
 
     def ui_setting(self):
-        current_form = SettingEditorWidget(self)
-        self.setCentralWidget(current_form)
-        current_form.show()
+        if self.setting_form is None:
+            self.setting_form = SettingEditorWidget(self)
+        self.setCentralWidget(self.setting_form)
+        self.setting_form.local = True
+        self.setting_form.load_json()
+        self.setting_form.show()
         return True
 
     def acc_setting(self):
-        current_form = SettingEditorWidget(self)
-        self.setCentralWidget(current_form)
-        current_form.show()
+        if self.setting_form is None:
+            self.setting_form = SettingEditorWidget(self)
+        self.setCentralWidget(self.setting_form)
+        self.setting_form.local = False
+        self.setting_form.load_json()
+        self.setting_form.show()
         return True
 
     def showDialog(self):

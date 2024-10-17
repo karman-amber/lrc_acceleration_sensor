@@ -15,7 +15,8 @@ class SettingEditorWidget(QWidget):
         self.father = father
         self.json_file_path = os.path.join(os.getcwd(), 'gui/setting.json')
         self.initUI()
-        self.load_json()
+        # self.load_json()
+        self.local = True
 
     def initUI(self):
         layout = QVBoxLayout()
@@ -45,8 +46,11 @@ class SettingEditorWidget(QWidget):
 
     def load_json(self):
         try:
-            with open(self.json_file_path, 'r', encoding='utf-8') as file:
-                json_data = json.load(file)
+            if self.local:
+                with open(self.json_file_path, 'r', encoding='utf-8') as file:
+                    json_data = json.load(file)
+            else:
+                json_data = self.father.http_client.download_json()
             self.text_edit.setText(json.dumps(json_data, indent=4, ensure_ascii=False))
         except FileNotFoundError:
             QMessageBox.warning(self, '错误', f'找不到文件: {self.json_file_path}')
@@ -56,8 +60,11 @@ class SettingEditorWidget(QWidget):
     def save_json(self):
         try:
             json_data = json.loads(self.text_edit.toPlainText())
-            with open(self.json_file_path, 'w', encoding='utf-8') as file:
-                json.dump(json_data, file, indent=4, ensure_ascii=False)
+            if self.local:
+                with open(self.json_file_path, 'w', encoding='utf-8') as file:
+                    json.dump(json_data, file, indent=4, ensure_ascii=False)
+            else:
+                self.father.http_client.upload_json(json_data)
             QMessageBox.information(self, '成功', '配置文件已保存')
         except json.JSONDecodeError:
             QMessageBox.warning(self, '错误', '无效的JSON格式')
