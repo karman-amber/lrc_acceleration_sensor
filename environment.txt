@@ -26,3 +26,13 @@ pip install paho-mqtt==1.6.1
 sudo apt-get update
 sudo apt-get install xorg libxcb-xinerama0
 
+# 在终端python 的环境下，查看字体路径
+import matplotlib
+print(matplotlib.matplotlib_fname())
+# 从C:\windows\fonts目录下拷贝simhei.ttf放置到matplotlib的字体路径下
+# 删除~/.cache/matplotlib缓存目录
+# 修改/home/user-name/anaconda3/lib/python3.10/site-packages/matplotlib/mpl-data 里面的matplotlibrc文件文件，添加
+    font.family         : sans-serif
+    font.sans-serif     : SimHei, Bitstream Vera Sans, Lucida Grande, Verdana, Geneva, Lucid, Arial, Helvetica, Avant Garde, sans-serif
+    axes.unicode_minus ，将True改为False，作用就是解决负号'-'显示为方块的问题
+
