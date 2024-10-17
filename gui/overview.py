@@ -77,13 +77,17 @@ class DynamicPlot(QWidget):
         if self.topic not in self.mqtt.queues or self.mqtt.queues[self.topic].empty():
             self.plotWidget.setTitle(f"{self.topic[-1:]}轴实时数据曲线-已暂停")
         else:
-            data = self.mqtt.queues[self.topic].get()
-            if data > self.max_data:
-                self.max_data = data
-            if data < self.min_data:
-                self.min_data = data
-            self.data.append(data)
-            self.plotWidget.setTitle(f"{self.topic[-1:]}轴实时数据曲线({round(self.min_data, 2)}至{round(self.max_data, 2)})")
+            count = self.mqtt.queues[self.topic].qsize()
+            if count > 1:
+                data = 0
+                for i in range(count):
+                    data = self.mqtt.queues[self.topic].get(block=False)
+                if data > self.max_data:
+                    self.max_data = data
+                if data < self.min_data:
+                    self.min_data = data
+                self.data.append(data)
+                self.plotWidget.setTitle(f"{self.topic[-1:]}轴实时数据曲线({round(self.min_data, 2)}至{round(self.max_data, 2)})")
         if len(self.data) > 100:
             self.data.pop(0)
 
