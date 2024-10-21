@@ -50,14 +50,19 @@ def bytes_to_hex(bytes_data):
     return hex_str
 
 
-def parity_check(frame_data):
+def parity_check(frame_data, header_length=2):
     b = frame_data[-1]
-    a = frame_data[2]
-    for i in range(3, len(frame_data) - 1):
-        a = a ^ frame_data[i]
+    a = get_parity(frame_data[header_length:-1])
     if a == b:
         return True
     return False
+
+
+def get_parity(frame_data):
+    a = frame_data[0]
+    for i in range(1, len(frame_data)):
+        a = a ^ frame_data[i]
+    return a
 
 
 def payload(frame_data):
@@ -104,4 +109,3 @@ def get_disk_info():
 
 def debug(info):
     print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), info)
-

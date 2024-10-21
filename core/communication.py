@@ -37,9 +37,9 @@ class Com:
             debug(e)
             return False
 
-    def read_data(self):
+    def read_data(self, frame_length=1024):
         try:
-            return self.serial.readline()
+            return self.serial.read(frame_length)
         except serial.SerialException as e:
             debug(e)
             return None
@@ -70,15 +70,13 @@ class Com:
             return None
 
     def get_version(self):
-        self.send_data(self.query_payload(1))
-        data = self.read_data()
+        data = self.__query__(1)
         if data:
             return data[9:-1].decode()
         return None
 
     def get_id(self):
-        self.send_data(self.query_payload(2))
-        data = self.read_data()
+        data = self.__query__(2)
         if data:
             return utils.bytes_to_hex(data[9:-1])
         return None
@@ -163,12 +161,22 @@ class Com:
             return self.__read__()
         return line
 
+    def __query__(self, msg_number):
+        self.send_data(self.query_payload(msg_number))
+        data = self.read_data()
+        return data
+
     def get_work_mode(self):
         if self.is_running():
             self.stop()
-        self.send_data(self.query_payload(16))
-        data = self.read_data()
+        data = self.__query__(16)
         return int.from_bytes(data[9:-1], 'big')
+
+    def get_temperature(self):
+        if self.is_running():
+            self.stop()
+        data = self.__query__(3)
+        return struct.unpack('f', data[9:-1])[0]
 
     def set_work_mode(self, mode):
         """
@@ -219,9 +227,7 @@ class Com:
 
     def get_thresholds(self):
         self.clear()
-        payload = self.query_payload(10)
-        self.send_data(payload)
-        data = self.read_data()
+        data = self.__query__(10)
         x = struct.unpack('f', data[9:13])[0]
         y = struct.unpack('f', data[13:17])[0]
         z = struct.unpack('f', data[17:21])[0]
@@ -249,9 +255,7 @@ class Com:
         获取停机复位的秒数，指的是停机后，过了多长时间会复位，单位是秒
         :return: 秒数， -1表示未读取成功
         """
-        payload = self.query_payload(20)  # 0x14消息指的是查询停机后复位秒数
-        self.send_data(payload)
-        data = self.read_data()
+        data = self.__query__(20)
         if data.startswith(b'\x55\xbb\x94'):
             return int.from_bytes(data[9:10], 'big')
         return -1
