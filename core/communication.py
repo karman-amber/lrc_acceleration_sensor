@@ -5,7 +5,7 @@ import serial
 import time
 import core.utils as utils
 from core.utils import debug
-
+from core.protocol import Protocol
 
 class Com:
     def __init__(self, com_port):
@@ -17,6 +17,7 @@ class Com:
                 debug(e)
         else:
             self.serial = None
+        self.protocol = Protocol()
 
     def auto_search(self):
         if self.serial is not None:
@@ -83,7 +84,8 @@ class Com:
 
     def stop(self):
         if self.is_running():
-            self.send_data(self.query_payload(5))
+            # self.send_data(self.query_payload(5))
+            self.__query__(5)
             self.clear()
             count = 0
             time.sleep(0.01)
@@ -98,13 +100,14 @@ class Com:
             return True
 
     def start(self):
-        payload = self.query_payload(4)
-        self.send_data(payload)
+        # payload = self.query_payload(4)
+        # self.send_data(payload)
+        self.__query__(4)
         count = 0
         while not self.is_running():
             self.stop()
             self.clear()
-            self.send_data(payload)
+            self.__query__(4)
             data = self.read_data()
             if data:
                 print(utils.bytes_to_hex(data))
@@ -119,10 +122,12 @@ class Com:
     def restart(self):
         self.clear()
         self.stop()
-        self.send_data(self.query_payload(8))
-        data = self.read_data()
-        sign = b'U\xbb\x88\x00\x00\x00\x00 \x00\xa8'
-        if data.__contains__(sign):
+        data = self.__query__(8)
+        # data = self.read_data()
+        # sign = b'U\xbb\x88\x00\x00\x00\x00 \x00\xa8'
+        self.protocol.set_message(data)
+        sign = self.protocol.message_type[0]
+        if sign == 136:
             return True
         return False
 
@@ -136,7 +141,7 @@ class Com:
 
     def get_data(self, interval=10):
         self.clear()
-        header = b'\x55\xbb'
+        header = self.protocol.header
         line = self.__read__()
         index = line.find(header)
         line = line[index:]
@@ -162,7 +167,9 @@ class Com:
         return line
 
     def __query__(self, msg_number):
-        self.send_data(self.query_payload(msg_number))
+        request_data = self.protocol.create_request_message(msg_number)
+        # self.send_data(self.query_payload(msg_number))
+        self.send_data(request_data)
         data = self.read_data()
         return data
 
@@ -195,9 +202,9 @@ class Com:
 
     def decode_xyz(self, data, header=b'\x55\xbb\x21'):
         if data.startswith(header):
-            x = struct.unpack('f', data[9:13])[0]
-            y = struct.unpack('f', data[13:17])[0]
-            z = struct.unpack('f', data[17:21])[0]
+            x = struct.unpack('<f', data[9:13])[0]
+            y = struct.unpack('<f', data[13:17])[0]
+            z = struct.unpack('<f', data[17:21])[0]
             return x, y, z
         return None
 
@@ -205,8 +212,8 @@ class Com:
         if data.startswith(header):
             alarm_type = int.from_bytes(data[9:10], 'big')
             alarm_name = int.from_bytes(data[10:11], 'big')
-            alarm_value = struct.unpack('f', data[11:15])[0]
-            alarm_limit = struct.unpack('f', data[15:19])[0]
+            alarm_value = struct.unpack('<f', data[11:15])[0]
+            alarm_limit = struct.unpack('<f', data[15:19])[0]
             return alarm_type, alarm_name, alarm_value, alarm_limit
         return None
 
@@ -218,30 +225,30 @@ class Com:
 
     def decode_all(self, data, header=b'\x55\xbb\x21'):
         if data.startswith(header) and len(data) == 26 and utils.parity_check(data):
-            x = struct.unpack('f', data[9:13])[0]
-            y = struct.unpack('f', data[13:17])[0]
-            z = struct.unpack('f', data[17:21])[0]
-            r = struct.unpack('f', data[21:25])[0]
+            x = struct.unpack('<f', data[9:13])[0]
+            y = struct.unpack('<f', data[13:17])[0]
+            z = struct.unpack('<f', data[17:21])[0]
+            r = struct.unpack('<f', data[21:25])[0]
             return x, y, z, r
         return None
 
     def get_thresholds(self):
         self.clear()
         data = self.__query__(10)
-        x = struct.unpack('f', data[9:13])[0]
-        y = struct.unpack('f', data[13:17])[0]
-        z = struct.unpack('f', data[17:21])[0]
-        rmse = struct.unpack('f', data[21:25])[0]
-        r = struct.unpack('f', data[25:29])[0]
+        x = struct.unpack('<f', data[9:13])[0]
+        y = struct.unpack('<f', data[13:17])[0]
+        z = struct.unpack('<f', data[17:21])[0]
+        rmse = struct.unpack('<f', data[21:25])[0]
+        r = struct.unpack('<f', data[25:29])[0]
         return {"x": x, "y": y, "z": z, "rmse": rmse, "r": r}
 
     def set_thresholds(self, x, y, z, rmse, r):
         payload = b'\x55\xbb\x09\x00\x00\x00\x00\x00\x14'
-        payload += struct.pack('f', x)
-        payload += struct.pack('f', y)
-        payload += struct.pack('f', z)
-        payload += struct.pack('f', rmse)
-        payload += struct.pack('f', r)
+        payload += struct.pack('<f', x)
+        payload += struct.pack('<f', y)
+        payload += struct.pack('<f', z)
+        payload += struct.pack('<f', rmse)
+        payload += struct.pack('<f', r)
         a = payload[2]
         for i in range(3, len(payload)):
             a = a ^ payload[i]
@@ -329,7 +336,7 @@ class Com:
         :param data_size: 载荷的字节大小，通常为1个字节
         :return: 带有奇偶校验码的字节数组
         """
-        payload = b'\x55\xbb' + msg_type.to_bytes(1, 'big') + b'\x00\x00\x00\x00\x00'
+        payload = self.protocol.header + msg_type.to_bytes(1, 'big') + self.protocol.reserved
         payload += data_size.to_bytes(1, 'big') + data.to_bytes(data_size, 'big')
         a = payload[2]
         for i in range(3, len(payload)):
@@ -337,14 +344,14 @@ class Com:
         payload += a.to_bytes(1, 'big')
         return payload
 
-    def query_payload(self, msg_type):
-        """
-        各种查询的载荷
-        :param msg_type:消息类型
-        :return: 带有奇偶校验码的字节数组
-        """
-        payload = b'\x55\xbb' + msg_type.to_bytes(1, 'big') + b'\x00\x00\x00\x00\x00\00' + msg_type.to_bytes(1, 'big')
-        return payload
+    # def query_payload(self, msg_type):
+    #     """
+    #     各种查询的载荷
+    #     :param msg_type:消息类型
+    #     :return: 带有奇偶校验码的字节数组
+    #     """
+    #     payload = b'\x55\xbb' + msg_type.to_bytes(1, 'big') + b'\x00\x00\x00\x00\x00\00' + msg_type.to_bytes(1, 'big')
+    #     return payload
 
     def show_some(self, length=10):
         if not self.is_running():
