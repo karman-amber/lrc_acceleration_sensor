@@ -21,6 +21,9 @@ class Sensor:
     switches: dict
     baud: int
     protocol_header: str
+    shutdown_switch: int
+    measure_range: int
+    transmit_frequency: int
 
 
 @attr.s(auto_attribs=True)
@@ -78,8 +81,8 @@ def main():
     # 创建示例数据
     mqtt = Mqtt(ip="172.8.8.229", port=1883, user="", password="")
     sensor = Sensor(work_mode=5, thresholds={"x": 50, "y": 50, "z": 50, "r": 50, "rmse": 50},
-                    switches={"x": True, "y": True, "z": True, "r": True, "rmse": True}, halt_reset_seconds=5,
-                    baud=115200, protocol_header="55 bb")
+                    switches={"x": True, "y": True, "z": True, "r": False, "rmse": False}, halt_reset_seconds=5,
+                    baud=115200, protocol_header="55 bb", shutdown_switch=0, measure_range=50, transmit_frequency=100)
 
     config = Config(
         mqtt=mqtt,

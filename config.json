@@ -23,6 +23,9 @@
       "rmse": false
     },
     "baud": 115200,
-    "protocol_header": "55 bb"
+    "protocol_header": "55 bb",
+    "shutdown_switch": 0,
+    "measure_range": 50,
+    "transmit_frequency": 100
   }
 }
