@@ -5,7 +5,7 @@ import serial
 import time
 import core.utils as utils
 from core.utils import debug
-from core.protocol import Protocol
+from core.protocol import Protocol, FRAME_HEADER
 
 class Com:
     def __init__(self, com_port):
@@ -123,11 +123,7 @@ class Com:
         self.clear()
         self.stop()
         data = self.__query__(8)
-        # data = self.read_data()
-        # sign = b'U\xbb\x88\x00\x00\x00\x00 \x00\xa8'
-        self.protocol.set_message(data)
-        sign = self.protocol.message_type[0]
-        if sign == 136:
+        if self.protocol.message_number() == 136:
             return True
         return False
 
@@ -141,7 +137,7 @@ class Com:
 
     def get_data(self, interval=10):
         self.clear()
-        header = self.protocol.header
+        header = FRAME_HEADER
         line = self.__read__()
         index = line.find(header)
         line = line[index:]
@@ -169,8 +165,12 @@ class Com:
     def __query__(self, msg_number):
         request_data = self.protocol.create_request_message(msg_number)
         # self.send_data(self.query_payload(msg_number))
+        return self.__request__(request_data)
+
+    def __request__(self, request_data):
         self.send_data(request_data)
         data = self.read_data()
+        self.protocol.set_message(data)
         return data
 
     def get_work_mode(self):
@@ -192,70 +192,81 @@ class Com:
         :return:是否设置成功
         """
         self.clear()
-        payload = self.request_payload(15, mode, 1)
-        self.send_data(payload)
-        data = self.read_data()
-        sign = b'\x55\xbb\x8f\x00\x00\x00\x00\x20\x00\xaf'
-        if data.__contains__(sign):
+        # payload = self.request_payload(15, mode, 1)
+        payload = self.protocol.message_with_integers(15, [mode], 1)
+        # self.send_data(payload)
+        # data = self.read_data()
+        # self.protocol.set_message(data)
+        self.__request__(payload)
+        # sign = b'\x55\xbb\x8f\x00\x00\x00\x00\x20\x00\xaf'
+        if self.protocol.message_number() == 143:
             return True
         return False
 
-    def decode_xyz(self, data, header=b'\x55\xbb\x21'):
-        if data.startswith(header):
-            x = struct.unpack('<f', data[9:13])[0]
-            y = struct.unpack('<f', data[13:17])[0]
-            z = struct.unpack('<f', data[17:21])[0]
-            return x, y, z
-        return None
+    # def decode_xyz(self, data, header=b'\x55\xbb\x21'):
+    #     self.protocol.set_message(data)
+    #     return self.protocol.to_floats()
+    #     # if data.startswith(header):
+    #     #     x = struct.unpack('<f', data[9:13])[0]
+    #     #     y = struct.unpack('<f', data[13:17])[0]
+    #     #     z = struct.unpack('<f', data[17:21])[0]
+    #     #     return x, y, z
+    #     # return None
 
-    def decode_alarm(self, data, header=b'\x55\xbb\x33'):
-        if data.startswith(header):
-            alarm_type = int.from_bytes(data[9:10], 'big')
-            alarm_name = int.from_bytes(data[10:11], 'big')
-            alarm_value = struct.unpack('<f', data[11:15])[0]
-            alarm_limit = struct.unpack('<f', data[15:19])[0]
-            return alarm_type, alarm_name, alarm_value, alarm_limit
-        return None
+    # def decode_alarm(self, data, header=b'\x55\xbb\x33'):
+    #     if data.startswith(header):
+    #         alarm_type = int.from_bytes(data[9:10], 'big')
+    #         alarm_name = int.from_bytes(data[10:11], 'big')
+    #         alarm_value = struct.unpack('<f', data[11:15])[0]
+    #         alarm_limit = struct.unpack('<f', data[15:19])[0]
+    #         return alarm_type, alarm_name, alarm_value, alarm_limit
+    #     return None
 
-    def is_alerting(self, data):
-        if data.startswith(b'\x55\xbb\x33'):
-            return True
-        else:
-            return False
+    # def is_alerting(self, data):
+    #     if data.startswith(b'\x55\xbb\x33'):
+    #         return True
+    #     else:
+    #         return False
 
-    def decode_all(self, data, header=b'\x55\xbb\x21'):
-        if data.startswith(header) and len(data) == 26 and utils.parity_check(data):
-            x = struct.unpack('<f', data[9:13])[0]
-            y = struct.unpack('<f', data[13:17])[0]
-            z = struct.unpack('<f', data[17:21])[0]
-            r = struct.unpack('<f', data[21:25])[0]
-            return x, y, z, r
-        return None
+    # def decode_all(self, data, header=b'\x55\xbb\x21'):
+    #     if data.startswith(header) and len(data) == 26 and utils.parity_check(data):
+    #         x = struct.unpack('<f', data[9:13])[0]
+    #         y = struct.unpack('<f', data[13:17])[0]
+    #         z = struct.unpack('<f', data[17:21])[0]
+    #         r = struct.unpack('<f', data[21:25])[0]
+    #         return x, y, z, r
+    #     return None
 
     def get_thresholds(self):
         self.clear()
         data = self.__query__(10)
-        x = struct.unpack('<f', data[9:13])[0]
-        y = struct.unpack('<f', data[13:17])[0]
-        z = struct.unpack('<f', data[17:21])[0]
-        rmse = struct.unpack('<f', data[21:25])[0]
-        r = struct.unpack('<f', data[25:29])[0]
+        # x = struct.unpack('<f', data[9:13])[0]
+        # y = struct.unpack('<f', data[13:17])[0]
+        # z = struct.unpack('<f', data[17:21])[0]
+        # rmse = struct.unpack('<f', data[21:25])[0]
+        # r = struct.unpack('<f', data[25:29])[0]
+        [x, y, z, rmse, r] = self.protocol.to_floats()
         return {"x": x, "y": y, "z": z, "rmse": rmse, "r": r}
 
     def set_thresholds(self, x, y, z, rmse, r):
-        payload = b'\x55\xbb\x09\x00\x00\x00\x00\x00\x14'
-        payload += struct.pack('<f', x)
-        payload += struct.pack('<f', y)
-        payload += struct.pack('<f', z)
-        payload += struct.pack('<f', rmse)
-        payload += struct.pack('<f', r)
-        a = payload[2]
-        for i in range(3, len(payload)):
-            a = a ^ payload[i]
-        payload += a.to_bytes(1, 'big')
-        self.send_data(payload)
-        data = self.read_data()
-        return data
+        # payload = b'\x55\xbb\x09\x00\x00\x00\x00\x00\x14'
+        # payload += struct.pack('<f', x)
+        # payload += struct.pack('<f', y)
+        # payload += struct.pack('<f', z)
+        # payload += struct.pack('<f', rmse)
+        # payload += struct.pack('<f', r)
+        # a = payload[2]
+        # for i in range(3, len(payload)):
+        #     a = a ^ payload[i]
+        # payload += a.to_bytes(1, 'big')
+        payload = self.protocol.message_with_floats(9, [x, y, z, rmse, r])
+        # self.send_data(payload)
+        # data = self.read_data()
+        # return data
+        self.__request__(payload)
+        if self.protocol.message_number() == 137:
+            return True
+        return False
 
     def get_halt_reset_seconds(self):
         """
@@ -263,7 +274,8 @@ class Com:
         :return: 秒数， -1表示未读取成功
         """
         data = self.__query__(20)
-        if data.startswith(b'\x55\xbb\x94'):
+        # self.protocol.set_message(data)
+        if self.protocol.message_number() == 148:   # 0x94号消息
             return int.from_bytes(data[9:10], 'big')
         return -1
 
@@ -273,10 +285,13 @@ class Com:
         :param seconds: 秒数
         :return: 成功返回True，失败返回False
         """
-        payload = self.request_payload(19, seconds, 1)
-        self.send_data(payload)
-        data = self.read_data()
-        if data == b'\x55\xbb\x93\x00\x00\x00\x00\x20\x00\xb3':
+        # payload = self.request_payload(19, seconds, 1)
+        payload = self.protocol.message_with_integers(19, [seconds], per_int_size=1)
+        # self.send_data(payload)
+        # data = self.read_data()
+        # self.protocol.set_message(data)
+        self.__request__(payload)
+        if self.protocol.message_number() == 147:
             return True
         return False
 
@@ -285,10 +300,13 @@ class Com:
         获取开关状态，0表示关机，1表示开机
         :return: 开关状态， -1表示未读取成功
         """
-        payload = self.query_payload(23)  # 0x17消息指的是各个阈值的开关状态
-        self.send_data(payload)
-        data = self.read_data()
-        if data.startswith(b'\x55\xbb\x97'):
+        # payload = self.query_payload(23)  # 0x17消息指的是各个阈值的开关状态
+        # payload = self.protocol.create_request_message(23)
+        # self.send_data(payload)
+        # data = self.read_data()
+        data = self.__query__(23)
+        # self.protocol.set_message(data)
+        if self.protocol.message_number() == 151:
             return self.decode_switches(int.from_bytes(data[9:10], 'big'))
         return -1
 
@@ -321,28 +339,31 @@ class Com:
             switch += 8
         if rmse:
             switch += 16
-        payload = self.request_payload(22, switch, 1)
-        self.send_data(payload)
-        data = self.read_data()
-        if data == b'\x55\xbb\x96\x00\x00\x00\x00\x20\x00\xb6':
+        # payload = self.request_payload(22, switch, 1)
+        payload = self.protocol.message_with_integers(22, [switch], 1)
+        # self.send_data(payload)
+        # data = self.read_data()
+        # self.protocol.set_message(data)
+        self.__request__(payload)
+        if self.protocol.message_number() == 150:
             return True
         return False
 
-    def request_payload(self, msg_type, data, data_size):
-        """
-        生产通信协议的载荷
-        :param msg_type:消息类型，用十进制表示
-        :param data: 载荷内容
-        :param data_size: 载荷的字节大小，通常为1个字节
-        :return: 带有奇偶校验码的字节数组
-        """
-        payload = self.protocol.header + msg_type.to_bytes(1, 'big') + self.protocol.reserved
-        payload += data_size.to_bytes(1, 'big') + data.to_bytes(data_size, 'big')
-        a = payload[2]
-        for i in range(3, len(payload)):
-            a = a ^ payload[i]
-        payload += a.to_bytes(1, 'big')
-        return payload
+    # def request_payload(self, msg_type, data, data_size):
+    #     """
+    #     生产通信协议的载荷
+    #     :param msg_type:消息类型，用十进制表示
+    #     :param data: 载荷内容
+    #     :param data_size: 载荷的字节大小，通常为1个字节
+    #     :return: 带有奇偶校验码的字节数组
+    #     """
+    #     payload = self.protocol.header + msg_type.to_bytes(1, 'big') + self.protocol.reserved
+    #     payload += data_size.to_bytes(1, 'big') + data.to_bytes(data_size, 'big')
+    #     a = payload[2]
+    #     for i in range(3, len(payload)):
+    #         a = a ^ payload[i]
+    #     payload += a.to_bytes(1, 'big')
+    #     return payload
 
     # def query_payload(self, msg_type):
     #     """
@@ -352,6 +373,44 @@ class Com:
     #     """
     #     payload = b'\x55\xbb' + msg_type.to_bytes(1, 'big') + b'\x00\x00\x00\x00\x00\00' + msg_type.to_bytes(1, 'big')
     #     return payload
+    def get_shutdown_switch(self):
+        data = self.__query__(18)
+        if self.protocol.message_number() == 146:
+            return int.from_bytes(data[9:10], 'big') == 1
+        return False
+
+    def set_shutdown_switch(self, value):
+        payload = self.protocol.message_with_integers(17, [value], per_int_size=1)
+        data = self.__request__(payload)
+        if self.protocol.message_number() == 145:
+            return True
+        return False
+
+    def get_measure_range(self):
+        data = self.__query__(38)
+        if self.protocol.message_number() == 166:
+            return int.from_bytes(data[9:10], 'big') * 10
+        return -1
+
+    def set_measure_range(self, value):
+        payload = self.protocol.message_with_integers(37, [value//10], per_int_size=1)
+        data = self.__request__(payload)
+        if self.protocol.message_number() == 165:
+            return True
+        return False
+
+    def get_transmit_frequency(self):
+        data = self.__query__(40)
+        if self.protocol.message_number() == 40 + 128:
+            return int.from_bytes(data[9:11], 'little')
+        return -1
+
+    def set_transmit_frequency(self, freq):
+        payload = self.protocol.message_with_integers(39, [freq], per_int_size=2)
+        data = self.__request__(payload)
+        if self.protocol.message_number() == 39 + 128:
+            return True
+        return False
 
     def show_some(self, length=10):
         if not self.is_running():

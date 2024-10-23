@@ -68,13 +68,23 @@ class Sensor:
         self.com.start()
         self.status = "running"
         timer = time.time()
+        protocol = self.com.protocol
         for data in self.com.get_data():
+            if not protocol.set_message(data):
+                print("set message error", utils.bytes_to_hex(data))
+                continue
+            # msg_number = protocol.message_number()
+            # if not (msg_number == 33 or msg_number == 51):
+            #     print("message number error", utils.bytes_to_hex(data))
+            #     continue
+            if not protocol.is_right():
+                continue
             if not self.is_running:
                 break
-            if self.com.is_alerting(data):  # 处理报警数据
+            if protocol.is_alarm():  # 处理报警数据
                 self.status = "alerting"
                 try:
-                    line = self.com.decode_alarm(data)  # 解码报警数据
+                    line = protocol.decode_alarm()  # 解码报警数据
                     if line is not None:
                         alarm_type, alarm_name, alarm_value, alarm_limit = line
                         names = {0: "x", 1: "y", 2: "z", 3: "rmse"}
@@ -93,7 +103,7 @@ class Sensor:
                             self.alarm.add(alarm_value)
                             self.alarm.end_time = time.time()
                 except Exception as ex:
-                    utils.debug([ex, utils.bytes_to_hex(data)])
+                    utils.debug(["解码警情错误:", ex, utils.bytes_to_hex(data)])
             else:
                 if self.alarm is not None:  # 处于报警状态中
                     timer = time.time()
@@ -106,33 +116,34 @@ class Sensor:
                         self.alarm = None
                         timer = time.time()
                         self.status = "running"
-                if data is not None:  # 如果是正常的加速度速度，则将其缓存为固定大小的队列中
+                if protocol.message_number() == 33:  # 如果是正常的加速度速度，则将其缓存为固定大小的队列中
                     try:
-                        line = self.com.decode_all(data)
-                        if line is not None:
-                            x, y, z, r = line
-                            self.push(x, y, z, r)
+                        result = protocol.to_floats()
+                        if result is not None:
+                            self.push(result)
                     except Exception as ex:
-                        utils.debug([ex, utils.bytes_to_hex(data)])
+                        utils.debug(["数据转化错误", ex, utils.bytes_to_hex(data)])
             if time.time() - timer > 2:
                 timer = time.time()
                 utils.debug(self.status)
 
-    def push(self, x, y, z, r):
+    def push(self, result):
         if self.x.qsize() >= self.x.maxsize:
             self.x.get()
             self.y.get()
             self.z.get()
-            self.r.get()
-        if self.mqtt is not None:
-            self.mqtt.publish(f"{x}", topic="lrc/sensor/x")
-            self.mqtt.publish(f"{y}", topic="lrc/sensor/y")
-            self.mqtt.publish(f"{z}", topic="lrc/sensor/z")
-            self.mqtt.publish(f"{r}", topic="lrc/sensor/r")
-        self.x.put(x)
-        self.y.put(y)
-        self.z.put(z)
-        self.r.put(r)
+            if not self.r.empty():
+                self.r.get()
+        params = ["x", "y", "z", "r"]
+        queues = [self.x, self.y, self.z, self.r]
+        index = 0
+        for value in result:
+            p = params[index]
+            q = queues[index]
+            if self.mqtt is not None:
+                self.mqtt.publish(f"{value}", topic=f"lrc/sensor/{p}")
+            q.put(value)
+            index += 1
 
     def save_alarm(self):
         columns = ["alarm_id", "alarm_start_time", "alarm_end_time",

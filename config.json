@@ -6,21 +6,21 @@
     "password": ""
   },
   "sensor": {
-    "work_mode": 5,
+    "work_mode": 0,
     "thresholds": {
-      "x": 50,
+      "x": 1,
       "y": 50,
       "z": 50,
       "r": 50,
-      "rmse": 2
+      "rmse": 50
     },
     "halt_reset_seconds": 5,
     "switches": {
       "x": true,
       "y": true,
       "z": true,
-      "r": true,
-      "rmse": true
+      "r": false,
+      "rmse": false
     },
     "baud": 115200,
     "protocol_header": "55 bb"
