@@ -17,9 +17,9 @@ if __name__ == '__main__':
     debug("传感器配置加载成功.")
     v.com.set_switches(rmse=config.sensor.switches["rmse"], x=config.sensor.switches["x"],
                        y=config.sensor.switches["y"], z=config.sensor.switches["z"], r=config.sensor.switches["r"])
-    v.com.set_thresholds(x=config.sensor.thresholds["x"], y=config.sensor.thresholds["y"],
-                         z=config.sensor.thresholds["z"], r=config.sensor.thresholds["r"],
-                         rmse=config.sensor.thresholds["rmse"])
+    v.com.set_thresholds([config.sensor.thresholds["x"], config.sensor.thresholds["y"],
+                         config.sensor.thresholds["z"], config.sensor.thresholds["r"],
+                         config.sensor.thresholds["rmse"]])
     v.com.set_work_mode(config.sensor.work_mode)
     v.com.set_halt_reset_seconds(config.sensor.halt_reset_seconds)
     v.com.set_relay_switch(config.sensor.relay_switch)
@@ -47,5 +47,7 @@ if __name__ == '__main__':
             # config.mqtt.port = v.mqtt.port
             config.to_json_file(config_file_path)
             debug("传感器配置保存本地成功.")
+            v.mqtt.loop_stop()
+            v.mqtt.disconnect()
             break
     debug("碰撞保护监控系统已经退出.")

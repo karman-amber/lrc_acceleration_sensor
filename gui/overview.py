@@ -1,5 +1,5 @@
 
-from PyQt5.QtWidgets import  QWidget, QVBoxLayout, QComboBox
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QComboBox
 from PyQt5.QtCore import QTimer
 import pyqtgraph as pg
 
@@ -7,7 +7,7 @@ import pyqtgraph as pg
 class DynamicPlot(QWidget):
     def __init__(self, mqtt):
         super().__init__()
-        self.data = [0] * 1
+        self.data = [0.0] * 1
         self.setWindowTitle('碰撞保护实时数据图')
         self.topic = "lrc/sensor/x"
         self.mqtt = mqtt
@@ -68,7 +68,8 @@ class DynamicPlot(QWidget):
             self.plotWidget.setTitle(f"{topic}轴实时数据曲线-已暂停")
         else:
             for i in range(100):
-                self.data.append(self.mqtt.queues[self.topic].get())
+                v = self.mqtt.queues[self.topic].get()
+                self.data.append(float(v))
 
         self.plot.setData(self.data)
 
@@ -81,15 +82,15 @@ class DynamicPlot(QWidget):
             if count > 1:
                 data = 0
                 for i in range(count):
-                    data = self.mqtt.queues[self.topic].get(block=False)
-                if data > self.max_data:
-                    self.max_data = data
-                if data < self.min_data:
-                    self.min_data = data
-                self.data.append(data)
+                    data = float(self.mqtt.queues[self.topic].get(block=False))
+                    if data > self.max_data:
+                        self.max_data = data
+                    if data < self.min_data:
+                        self.min_data = data
+                    self.data.append(data)
                 self.plotWidget.setTitle(f"{self.topic[-1:]}轴实时数据曲线({round(self.min_data, 2)}至{round(self.max_data, 2)})")
-        if len(self.data) > 100:
-            self.data.pop(0)
+        if len(self.data) > 2000:
+            self.data = self.data[-2000:]
 
         # 更新曲线
         self.plot.setData(self.data)

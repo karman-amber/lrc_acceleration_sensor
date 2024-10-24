@@ -1,14 +1,15 @@
 # author: zuohuaiyu
 # date: 2024/9/19 15:02
+import json
 import os
 
-from core import communication, mqtt, utils 
+from core import communication, utils
 from threading import Thread
 import time
 import queue
 import numpy as np
 import pandas as pd
-
+import paho.mqtt.client as mqtt
 
 max_size = 500
 
@@ -141,7 +142,7 @@ class Sensor:
             p = params[index]
             q = queues[index]
             if self.mqtt is not None:
-                self.mqtt.publish(f"{value}", topic=f"lrc/sensor/{p}")
+                self.mqtt.publish(f"lrc/sensor/{p}", f"{value}")
             q.put(value)
             index += 1
 
@@ -168,11 +169,48 @@ class Sensor:
 
     def set_mqtt(self, mqtt_ip, mqtt_port=1883, mqtt_user=None, mqtt_pwd=None):
         try:
-            self.mqtt = mqtt.MqttClient()
-            self.mqtt.connect(mqtt_ip, mqtt_port, mqtt_user, mqtt_pwd)
+            self.mqtt = mqtt.Client()
+            self.mqtt.connect(mqtt_ip, mqtt_port, 60)
+            self.mqtt.subscribe("lrc/sensor/control")
+            self.mqtt.on_message = self.on_message
+            self.mqtt.loop_start()
         except Exception as ex:
             utils.debug(ex)
             self.mqtt = None
+
+    def on_message(self, client, userdata, msg):
+        try:
+            command = msg.payload.decode()
+            cmd, params = command.split(":")
+            result = True
+            if cmd == "start":
+                result = result and self.com.start()
+            elif cmd == "stop":
+                result = result and self.com.stop()
+            elif cmd == "set_thresholds":
+                params = [float(i) for i in params.split(",")]
+                result = result and self.com.set_thresholds(params)
+            elif cmd == "set_halt_reset_seconds":
+                params = int(params)
+                result = result and self.com.set_halt_reset_seconds(params)
+            elif cmd == "set_measure_range":
+                params = int(params)
+                result = result and self.com.set_measure_range(params)
+            elif cmd == "set_transmit_frequency":
+                params = int(params)
+                result = result and self.com.set_transmit_frequency(params)
+            elif cmd == "set_relay_switch":
+                params = int(params)
+                result = result and self.com.set_relay_switch(params)
+            elif cmd == "set_work_mode":
+                params = int(params)
+                result = result and self.com.set_work_mode(params)
+            elif cmd == "get_status":
+                result = self.com.get_status()
+                self.mqtt.publish("lrc/sensor/status", json.dumps(result))
+            utils.debug(f"Received command: {cmd}, params: {params}, result is {result}")
+        except Exception as e:
+            print(f"Error processing message: {e}")
 
     def stop(self):
         self.is_running = False
@@ -185,11 +223,49 @@ class Sensor:
         self.z.maxsize = size
         self.r.maxsize = size
 
+    # def set_sensor(self):
+    #     key = "lrc/sensor/control"
+    #     while True:
+    #         if key in self.mqtt.queues:
+    #             cmd_queue = self.mqtt.queues[key]
+    #             if not cmd_queue.empty():
+    #                 cmd = cmd_queue.get()
+    #                 cmd, params = cmd.split(":")
+    #                 if cmd == "start":
+    #                     self.com.start()
+    #                 elif cmd == "stop":
+    #                     self.com.stop()
+    #                 elif cmd == "set_thresholds":
+    #                     params = [float(i) for i in params.split(",")]
+    #                     self.com.set_thresholds(params)
+    #                 elif cmd == "set_halt_reset_seconds":
+    #                     params = int(params)
+    #                     self.com.set_halt_reset_seconds(params)
+    #                 elif cmd == "set_measure_range":
+    #                     params = int(params)
+    #                     self.com.set_measure_range(params)
+    #                 elif cmd == "set_transmit_frequency":
+    #                     params = float(params)
+    #                     self.com.set_transmit_frequency(params)
+    #                 elif cmd == "set_relay_switch":
+    #                     params = int(params)
+    #                     self.com.set_relay_switch(params)
+    #                 elif cmd == "set_work_mode":
+    #                     params = int(params)
+    #                     self.com.set_work_mode(params)
+    #             else:
+    #                 time.sleep(0.01)
+    #         else:
+    #             time.sleep(0.01)
+
     def run(self):
         self.is_running = True
         thread1 = Thread(target=self.start)
         thread1.daemon = True
         thread1.start()
+        # thread2 = Thread(target=self.set_sensor)
+        # thread2.daemon = True
+        # thread2.start()
 
 
 if __name__ == '__main__':

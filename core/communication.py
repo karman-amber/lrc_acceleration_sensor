@@ -7,6 +7,7 @@ import core.utils as utils
 from core.utils import debug
 from core.protocol import Protocol, FRAME_HEADER
 
+
 class Com:
     def __init__(self, com_port):
         self.com_port = com_port
@@ -203,40 +204,6 @@ class Com:
             return True
         return False
 
-    # def decode_xyz(self, data, header=b'\x55\xbb\x21'):
-    #     self.protocol.set_message(data)
-    #     return self.protocol.to_floats()
-    #     # if data.startswith(header):
-    #     #     x = struct.unpack('<f', data[9:13])[0]
-    #     #     y = struct.unpack('<f', data[13:17])[0]
-    #     #     z = struct.unpack('<f', data[17:21])[0]
-    #     #     return x, y, z
-    #     # return None
-
-    # def decode_alarm(self, data, header=b'\x55\xbb\x33'):
-    #     if data.startswith(header):
-    #         alarm_type = int.from_bytes(data[9:10], 'big')
-    #         alarm_name = int.from_bytes(data[10:11], 'big')
-    #         alarm_value = struct.unpack('<f', data[11:15])[0]
-    #         alarm_limit = struct.unpack('<f', data[15:19])[0]
-    #         return alarm_type, alarm_name, alarm_value, alarm_limit
-    #     return None
-
-    # def is_alerting(self, data):
-    #     if data.startswith(b'\x55\xbb\x33'):
-    #         return True
-    #     else:
-    #         return False
-
-    # def decode_all(self, data, header=b'\x55\xbb\x21'):
-    #     if data.startswith(header) and len(data) == 26 and utils.parity_check(data):
-    #         x = struct.unpack('<f', data[9:13])[0]
-    #         y = struct.unpack('<f', data[13:17])[0]
-    #         z = struct.unpack('<f', data[17:21])[0]
-    #         r = struct.unpack('<f', data[21:25])[0]
-    #         return x, y, z, r
-    #     return None
-
     def get_thresholds(self):
         self.clear()
         data = self.__query__(10)
@@ -248,7 +215,7 @@ class Com:
         [x, y, z, rmse, r] = self.protocol.to_floats()
         return {"x": x, "y": y, "z": z, "rmse": rmse, "r": r}
 
-    def set_thresholds(self, x, y, z, rmse, r):
+    def set_thresholds(self, params):
         # payload = b'\x55\xbb\x09\x00\x00\x00\x00\x00\x14'
         # payload += struct.pack('<f', x)
         # payload += struct.pack('<f', y)
@@ -259,6 +226,7 @@ class Com:
         # for i in range(3, len(payload)):
         #     a = a ^ payload[i]
         # payload += a.to_bytes(1, 'big')
+        x, y, z, rmse, r = params
         payload = self.protocol.message_with_floats(9, [x, y, z, rmse, r])
         # self.send_data(payload)
         # data = self.read_data()
@@ -268,6 +236,9 @@ class Com:
             return True
         return False
 
+    # def set_thresholds(self, params):
+    #     return self.set_thresholds(params["x"], params["y"], params["z"], params["rmse"], params["r"])
+
     def get_halt_reset_seconds(self):
         """
         获取停机复位的秒数，指的是停机后，过了多长时间会复位，单位是秒
@@ -275,7 +246,7 @@ class Com:
         """
         data = self.__query__(20)
         # self.protocol.set_message(data)
-        if self.protocol.message_number() == 148:   # 0x94号消息
+        if self.protocol.message_number() == 148:  # 0x94号消息
             return int.from_bytes(data[9:10], 'big')
         return -1
 
@@ -307,6 +278,7 @@ class Com:
         data = self.__query__(23)
         # self.protocol.set_message(data)
         if self.protocol.message_number() == 151:
+
             return self.decode_switches(int.from_bytes(data[9:10], 'big'))
         return -1
 
@@ -349,30 +321,6 @@ class Com:
             return True
         return False
 
-    # def request_payload(self, msg_type, data, data_size):
-    #     """
-    #     生产通信协议的载荷
-    #     :param msg_type:消息类型，用十进制表示
-    #     :param data: 载荷内容
-    #     :param data_size: 载荷的字节大小，通常为1个字节
-    #     :return: 带有奇偶校验码的字节数组
-    #     """
-    #     payload = self.protocol.header + msg_type.to_bytes(1, 'big') + self.protocol.reserved
-    #     payload += data_size.to_bytes(1, 'big') + data.to_bytes(data_size, 'big')
-    #     a = payload[2]
-    #     for i in range(3, len(payload)):
-    #         a = a ^ payload[i]
-    #     payload += a.to_bytes(1, 'big')
-    #     return payload
-
-    # def query_payload(self, msg_type):
-    #     """
-    #     各种查询的载荷
-    #     :param msg_type:消息类型
-    #     :return: 带有奇偶校验码的字节数组
-    #     """
-    #     payload = b'\x55\xbb' + msg_type.to_bytes(1, 'big') + b'\x00\x00\x00\x00\x00\00' + msg_type.to_bytes(1, 'big')
-    #     return payload
     def get_shutdown_switch(self):
         data = self.__query__(18)
         if self.protocol.message_number() == 146:
@@ -393,7 +341,7 @@ class Com:
         return -1
 
     def set_measure_range(self, value):
-        payload = self.protocol.message_with_integers(37, [value//10], per_int_size=1)
+        payload = self.protocol.message_with_integers(37, [value // 10], per_int_size=1)
         data = self.__request__(payload)
         if self.protocol.message_number() == 165:
             return True
@@ -423,6 +371,41 @@ class Com:
         if self.protocol.message_number() == 21 + 128:
             return True
         return False
+
+    def get_chip_frequency(self):
+        freq_dict = {0: 4000, 1: 2000, 2: 1000, 3: 500, 4: 250, 5: 125, 6: 62.5, 7: 31.25, 8: 15.625, 9: 7.8125,
+                     10: 3.90625}
+        data = self.__query__(6)
+        if self.protocol.message_number() == 6 + 128:
+            sign = int.from_bytes(data[9:10], 'little')
+            if sign in freq_dict:
+                return freq_dict[sign]
+        return -1
+
+    def set_chip_frequency(self, freq):
+        payload = self.protocol.message_with_integers(7, [freq], per_int_size=1)
+        data = self.__request__(payload)
+        if self.protocol.message_number() == 7 + 128:
+            return True
+        return False
+
+    def get_status(self):
+        result = dict()
+        result["is_running"] = self.is_running()
+        self.stop()
+        result["id"] = self.get_id()
+        result["version"] = self.get_version()
+        result["thresholds"] = self.get_thresholds()
+        result["transmit_frequency"] = self.get_transmit_frequency()
+        result["measure_range"] = self.get_measure_range()
+        result["work_mode"] = self.get_work_mode()
+        # result["relay_switch"] = self.get_relay_switch()
+        result["temperature"] = round(self.get_temperature(), 1)
+        result["halt_reset_seconds"] = self.get_halt_reset_seconds()
+        result["chip_frequency"] = self.get_chip_frequency()
+        if result["is_running"]:
+            self.start()
+        return result
 
     def show_some(self, length=10):
         if not self.is_running():

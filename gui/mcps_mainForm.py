@@ -162,8 +162,7 @@ class MainWindow(QMainWindow):
         return True
 
     def ui_setting(self):
-        if self.setting_form is None:
-            self.setting_form = SettingEditorWidget(self)
+        self.setting_form = SettingEditorWidget(self)
         self.setCentralWidget(self.setting_form)
         self.setting_form.local = True
         self.setting_form.load_json()

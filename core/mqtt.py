@@ -74,7 +74,7 @@ class MqttClient:
                 self.mqtt_client.subscribe(topic)
 
             def on_message2(client2, userdata, msg):
-                mst_data = float(msg.payload.decode())
+                mst_data = msg.payload.decode()
                 msg_topic = msg.topic
                 if msg_topic not in self.queues:
                     self.queues[msg_topic] = queue.Queue()
