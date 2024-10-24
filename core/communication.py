@@ -412,6 +412,18 @@ class Com:
             return True
         return False
 
+    def set_relay_switch(self, value=0):
+        """
+        打开继电器开关
+        :param value:1为NO打开，2为NC打开，3为NC和NC都打开，0为全部关闭
+        :return: 是否成功
+        """
+        payload = self.protocol.message_with_integers(21, [value], per_int_size=1)
+        data = self.__request__(payload)
+        if self.protocol.message_number() == 21 + 128:
+            return True
+        return False
+
     def show_some(self, length=10):
         if not self.is_running():
             self.start()

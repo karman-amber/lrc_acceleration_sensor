@@ -11,7 +11,6 @@ import argparse
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
     setting = Setting.from_json_file("gui/setting.json")
     mqtt_ip = setting.mqtt.ip
     mqtt_port = setting.mqtt.port

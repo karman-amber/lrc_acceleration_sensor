@@ -8,24 +8,25 @@
   "sensor": {
     "work_mode": 0,
     "thresholds": {
-      "x": 1,
-      "y": 50,
-      "z": 50,
-      "r": 50,
-      "rmse": 50
+      "x": 1.0,
+      "y": 50.0,
+      "z": 50.0,
+      "rmse": 50.0,
+      "r": 50.0
     },
     "halt_reset_seconds": 5,
     "switches": {
+      "rmse": false,
+      "r": false,
       "x": true,
       "y": true,
-      "z": true,
-      "r": false,
-      "rmse": false
+      "z": true
     },
     "baud": 115200,
     "protocol_header": "55 bb",
     "shutdown_switch": 0,
-    "measure_range": 50,
-    "transmit_frequency": 100
+    "measure_range": 30,
+    "transmit_frequency": 100,
+    "relay_switch": 0
   }
 }
