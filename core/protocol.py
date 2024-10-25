@@ -4,10 +4,16 @@ import struct
 
 import core.utils as utils
 
-FRAME_HEADER = b'\x55\xbb'
-
+HEADER_BYTES = b'\x55\xbb'
+# HEADER_BYTES = bytes([0x55, 0xBB])
+HEADER_LENGTH = 2
+TYPE_LENGTH = 1
+RESERVED_LENGTH = 4
+LENGTH_FIELD_SIZE = 2
+CHECKSUM_LENGTH = 1
 
 class Protocol:
+
     def __init__(self):
         self.message_bytes = None
         self.header = b'\x55\xbb'
@@ -57,7 +63,7 @@ class Protocol:
         result = True
         if self.message_bytes:
             result = result and utils.parity_check(self.message_bytes, len(self.header))
-            result = result and self.header == FRAME_HEADER
+            result = result and self.header == HEADER_BYTES
         else:
             result = False
         return result
@@ -98,7 +104,7 @@ class Protocol:
     def decode_message(self):
         message_bytes = self.message_bytes
         if message_bytes:
-            if len(message_bytes) >= 10 and FRAME_HEADER == message_bytes[:2]:
+            if len(message_bytes) >= 10 and HEADER_BYTES == message_bytes[:2]:
                 self.message_type = message_bytes[2:3]
                 self.reserved = message_bytes[3:7]
                 x, y = self.unpack_message_length(message_bytes[7:9])
@@ -124,7 +130,7 @@ class Protocol:
                 return None
 
     def set_message(self, message_bytes):
-        if message_bytes.startswith(FRAME_HEADER):
+        if message_bytes.startswith(HEADER_BYTES):
             self.message_bytes = message_bytes
             self.decode_message()
             return True
