@@ -5,7 +5,7 @@ import serial
 import time
 import core.utils as utils
 from core.utils import debug
-from core.protocol import Protocol, FRAME_HEADER
+from core.protocol import Protocol, HEADER_BYTES,HEADER_LENGTH, TYPE_LENGTH, RESERVED_LENGTH,LENGTH_FIELD_SIZE,CHECKSUM_LENGTH
 
 
 class Com:
@@ -136,20 +136,82 @@ class Com:
             return True
         return False
 
-    def get_data(self, interval=10):
+    def get_data(self, interval=2):
         self.clear()
-        header = FRAME_HEADER
-        line = self.__read__()
-        index = line.find(header)
-        line = line[index:]
+        header = HEADER_BYTES
         while True:
-            end = line.find(header, 1)
-            while end > 0:
-                yield line[:end]
-                line = line[end:]
-                end = line.find(header, 1)
-            line += self.__read__()
-            time.sleep(interval / 1000)
+            try:
+                # 查找帧头
+                while True:
+                    # 读取第一个字节
+                    byte = self.serial.read(1)
+                    if not byte:  # 超时，继续尝试
+                        continue
+                    if byte[0] != HEADER_BYTES[0]:
+                        continue
+
+                    # 读取第二个字节
+                    byte = self.serial.read(1)
+                    if not byte or byte[0] != HEADER_BYTES[1]:
+                        continue
+                    break
+                # 读取数据类型
+                type_byte = self.serial.read(TYPE_LENGTH)
+                if not type_byte:
+                    continue
+                data_type = type_byte[0]
+                # 跳过保留字节
+                reserved = self.serial.read(RESERVED_LENGTH)
+                if len(reserved) != RESERVED_LENGTH:
+                    continue
+                # 读取长度字段
+                length_bytes = self.serial.read(LENGTH_FIELD_SIZE)
+                if len(length_bytes) != LENGTH_FIELD_SIZE:
+                    continue
+
+                # 解析子类型和数据长度
+                sub_type = (length_bytes[0] & 0xE0) >> 5  # 提取高字节的前3位作为子类型
+                data_length = length_bytes[1]  # 低字节为数据长度
+
+                # 读取数据
+                data = self.serial.read(data_length) if data_length > 0 else b''
+                if len(data) != data_length:
+                    continue
+
+                # 读取校验和
+                checksum_byte = self.serial.read(CHECKSUM_LENGTH)
+                if not checksum_byte:
+                    continue
+
+                # 验证校验和
+                frame_data = (
+                        HEADER_BYTES +
+                        type_byte +
+                        reserved +
+                        length_bytes +
+                        data +
+                        checksum_byte
+                )
+                # debug(utils.bytes_to_hex(frame_data))
+                yield frame_data
+            except Exception as e:
+                debug(f"Unexpected error: {e}")
+                continue
+
+        # line = self.__read__()
+        # index = line.find(header)
+        # line = line[index:]
+        # index = 1
+        # while True:
+        #     end = line.find(header, index)
+        #     if end > 9:
+        #         yield line[:end]
+        #         line = line[end:]
+        #         index = 1
+        #     else:
+        #         index += end + 1
+        #     line += self.__read__()
+        #     time.sleep(interval / 1000)
 
     def __read__(self):
         line = None
