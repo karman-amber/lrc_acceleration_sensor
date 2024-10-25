@@ -1,5 +1,6 @@
 # author: zuohuaiyu
 # date: 2024/9/19 15:02
+import copy
 import json
 import os
 
@@ -10,6 +11,7 @@ import queue
 import numpy as np
 import pandas as pd
 import paho.mqtt.client as mqtt
+from core.base import SensorStatus
 
 max_size = 500
 
@@ -52,7 +54,7 @@ class Alarm:
 
 
 class Sensor:
-    def __init__(self, name):
+    def __init__(self, name, ):
         self.name = name
         self.com = communication.Com(None)
         self.status = "unknown"
@@ -63,6 +65,7 @@ class Sensor:
         self.r = queue.Queue(maxsize=max_size)
         self.alarm = None
         self.mqtt = None
+        self.sensor_status = None
 
     def start(self):
         self.com.auto_search()
@@ -74,10 +77,6 @@ class Sensor:
             if not protocol.set_message(data):
                 print("set message error", utils.bytes_to_hex(data))
                 continue
-            # msg_number = protocol.message_number()
-            # if not (msg_number == 33 or msg_number == 51):
-            #     print("message number error", utils.bytes_to_hex(data))
-            #     continue
             if not protocol.is_right():
                 continue
             if not self.is_running:
@@ -178,34 +177,61 @@ class Sensor:
             utils.debug(ex)
             self.mqtt = None
 
+    def set_config(self, config):
+        self.sensor_status = config
+
     def on_message(self, client, userdata, msg):
         try:
             command = msg.payload.decode()
             cmd, params = command.split(":")
             result = True
             if cmd == "start":
-                result = result and self.com.start()
+                result = self.com.start()
+                if result:
+                    self.sensor_status.is_running = True
             elif cmd == "stop":
-                result = result and self.com.stop()
+                result = self.com.stop()
+                if result:
+                    self.sensor_status.is_running = False
             elif cmd == "set_thresholds":
                 params = [float(i) for i in params.split(",")]
-                result = result and self.com.set_thresholds(params)
+                result = self.com.set_thresholds(params)
+                if result:
+                    self.sensor_status.thresholds.x = params[0]
+                    self.sensor_status.thresholds.y = params[1]
+                    self.sensor_status.thresholds.z = params[2]
+                    self.sensor_status.thresholds.rmse = params[3]
+                    self.sensor_status.thresholds.r = params[4]
             elif cmd == "set_halt_reset_seconds":
                 params = int(params)
-                result = result and self.com.set_halt_reset_seconds(params)
+                result = self.com.set_halt_reset_seconds(params)
+                if result:
+                    self.sensor_status.halt_reset_seconds = params
             elif cmd == "set_measure_range":
                 params = int(params)
-                result = result and self.com.set_measure_range(params)
+                result = self.com.set_measure_range(params)
+                if result:
+                    self.sensor_status.measure_range = params
             elif cmd == "set_transmit_frequency":
                 params = int(params)
-                result = result and self.com.set_transmit_frequency(params)
+                result = self.com.set_transmit_frequency(params)
+                if result:
+                    self.sensor_status.transmit_frequency = params
             elif cmd == "set_relay_switch":
                 params = int(params)
-                result = result and self.com.set_relay_switch(params)
+                result = self.com.set_relay_switch(params)
+                if result:
+                    self.sensor_status.relay_switch = params
             elif cmd == "set_work_mode":
                 params = int(params)
-                result = result and self.com.set_work_mode(params)
+                result = self.com.set_work_mode(params)
+                if result:
+                    self.sensor_status.work_mode = params
             elif cmd == "get_status":
+                result = copy.deepcopy(self.sensor_status).__dict__
+                result['thresholds'] = self.sensor_status.thresholds.__dict__
+                self.mqtt.publish("lrc/sensor/status", json.dumps(result))
+            elif cmd == "get_status2":
                 result = self.com.get_status()
                 self.mqtt.publish("lrc/sensor/status", json.dumps(result))
             utils.debug(f"Received command: {cmd}, params: {params}, result is {result}")

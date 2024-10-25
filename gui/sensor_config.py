@@ -188,7 +188,7 @@ class ConfigWidget(QWidget):
         self.thresholds_y.setValue(self.config_data.thresholds.y)
         self.thresholds_z.setValue(self.config_data.thresholds.z)
         self.transmit_freq_combo.setCurrentText(str(self.config_data.transmit_frequency))
-        self.measure_range_spin.setValue(self.config_data.measure_range)
+        self.measure_range_combo.setCurrentText(str(self.config_data.measure_range))
         self.work_mode_combo.setCurrentText(str(self.config_data.work_mode))
         self.halt_reset_spin.setValue(self.config_data.halt_reset_seconds)
         self.chip_freq_combo.setCurrentText(str(self.config_data.chip_frequency))

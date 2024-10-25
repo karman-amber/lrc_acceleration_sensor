@@ -274,8 +274,10 @@ class Com:
         # z = struct.unpack('<f', data[17:21])[0]
         # rmse = struct.unpack('<f', data[21:25])[0]
         # r = struct.unpack('<f', data[25:29])[0]
-        [x, y, z, rmse, r] = self.protocol.to_floats()
-        return {"x": x, "y": y, "z": z, "rmse": rmse, "r": r}
+        if self.protocol.message_number() - 128 == 10:
+            [x, y, z, rmse, r] = self.protocol.to_floats()
+            return {"x": x, "y": y, "z": z, "rmse": rmse, "r": r}
+        return None
 
     def set_thresholds(self, params):
         # payload = b'\x55\xbb\x09\x00\x00\x00\x00\x00\x14'
