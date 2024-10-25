@@ -1,4 +1,5 @@
 import sys
+import time
 
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon
@@ -9,8 +10,11 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PyQt5.QtCore import Qt
 from gui.overview import DynamicPlot
 from gui.alarms import AlarmViewer
+from gui.sensor_config import ConfigWidget
 # from core.mqtt import MqttClient
 from gui.setting import SettingEditorWidget
+from web_api.control_client import SensorManager
+from core.base import SensorStatus, AlarmThresholds
 
 
 class SubWindow(QWidget):
@@ -55,7 +59,8 @@ class MainWindow(QMainWindow):
         self.initUI()
         self.mqtt = mqtt_client
         self.http_client = http_client
-        self.setting_form = None
+        self.sensor_config = None
+        # self.setting_form = None
         # self.mqtt.connect("172.8.8.229", 1883)
         # self.mqtt.start_subscribe()
 
@@ -71,7 +76,11 @@ class MainWindow(QMainWindow):
         # 创建菜单栏
         menubar = self.menuBar()
         home_menu = menubar.addMenu('主页')
-        threshold_menu = menubar.addMenu('监控阈值')
+        # threshold_menu = menubar.addMenu('传感器配置')
+        sensor_setting_action = QAction('传感器配置', self)
+        sensor_setting_action.setShortcut('Ctrl+S')
+        sensor_setting_action.triggered.connect(self.sensor_setting)
+        menubar.addAction(sensor_setting_action)
 
         data_menu = menubar.addMenu("数据管理")
         diagnostic_menu = menubar.addMenu("在线诊断")
@@ -184,9 +193,54 @@ class MainWindow(QMainWindow):
         if result == QDialog.Accepted:
             self.statusBar().showMessage('对话框已确认')
 
+    def sensor_setting(self):
+        self.statusBar().showMessage('正在获取传感器参数配置信息，请稍后......')
+        self.get_sensor_status()
+        self.statusBar().showMessage('传感器参数配置信息读取完毕.')
+        setting_form = ConfigWidget(self)
+        self.setCentralWidget(setting_form)
+        setting_form.show()
+
     def showAbout(self):
         QMessageBox.about(self, '关于', '碰撞保护系统1.0 版本\n 版权所有 © 2024')
         self.statusBar().showMessage('显示关于信息')
+
+    def get_sensor_status(self):
+        """获取当前配置"""
+        def status_handler(status: SensorStatus):
+            self.sensor_config = status
+
+        # 创建设备管理器实例
+        device_manager = SensorManager()
+
+        # 获取状态
+        device_manager.get_status(status_handler)
+
+        # 等待一段时间以接收响应
+        while self.sensor_config is None:
+            time.sleep(0.02)
+
+        # 清理资源
+        device_manager.close()
+
+    def set_sensor(self, status: SensorStatus):
+        if self.mqtt is not None:
+            if status.work_mode != self.sensor_config.work_mode:
+                self.mqtt.publish("lrc/sensor/control", f"set_work_mode:{status.work_mode}")
+            if status.thresholds != self.sensor_config.thresholds:
+                params = f"{status.thresholds.x},{status.thresholds.y},{status.thresholds.z}," \
+                         f"{status.thresholds.rmse},{status.thresholds.r}"
+                self.mqtt.publish("lrc/sensor/control", f"set_thresholds:{params}")
+            if status.halt_reset_seconds != self.sensor_config.halt_reset_seconds:
+                self.mqtt.publish("lrc/sensor/control", f"set_halt_reset_seconds:{status.halt_reset_seconds}")
+            if status.chip_frequency != self.sensor_config.chip_frequency:
+                self.mqtt.publish("lrc/sensor/control", f"set_chip_frequency:{status.chip_frequency}")
+            if status.measure_range != self.sensor_config.measure_range:
+                self.mqtt.publish("lrc/sensor/control", f"set_measure_range:{status.measure_range}")
+            if status.transmit_frequency != self.sensor_config.transmit_frequency:
+                self.mqtt.publish("lrc/sensor/control", f"set_transmit_frequency:{status.transmit_frequency}")
+        else:
+            QMessageBox.information(self, "提示", "未正确配置远程服务器，无法执行更新")
 
 # def main():
 #     app = QApplication(sys.argv)
