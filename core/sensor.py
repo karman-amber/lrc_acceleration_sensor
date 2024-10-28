@@ -70,6 +70,7 @@ class Sensor:
     def start(self):
         self.com.auto_search()
         self.com.start()
+        self.sensor_status.is_running = True
         self.status = "running"
         timer = time.time()
         protocol = self.com.protocol
@@ -241,6 +242,7 @@ class Sensor:
     def stop(self):
         self.is_running = False
         self.com.stop()
+        self.sensor_status.is_running = False
         self.status = "stopping"
 
     def set_cache_size(self, size):
@@ -289,6 +291,7 @@ class Sensor:
         thread1 = Thread(target=self.start)
         thread1.daemon = True
         thread1.start()
+
         # thread2 = Thread(target=self.set_sensor)
         # thread2.daemon = True
         # thread2.start()

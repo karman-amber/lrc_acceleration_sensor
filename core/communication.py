@@ -471,6 +471,25 @@ class Com:
             self.start()
         return result
 
+    # def set_status(self, params):
+    #     is_running = self.is_running()
+    #     self.stop()
+    #     # result["id"] = self.get_id()
+    #     # result["version"] = self.get_version()
+    #     x, y, z, rmse, r = params["thresholds"]
+    #     self.set_thresholds([x, y, z, rmse, r])
+    #     # result["thresholds"] = self.get_thresholds()
+    #     result["transmit_frequency"] = self.get_transmit_frequency()
+    #     result["measure_range"] = self.get_measure_range()
+    #     result["work_mode"] = self.get_work_mode()
+    #     # result["relay_switch"] = self.get_relay_switch()
+    #     # result["temperature"] = round(self.get_temperature(), 1)
+    #     result["halt_reset_seconds"] = self.get_halt_reset_seconds()
+    #     result["chip_frequency"] = self.get_chip_frequency()
+    #     if result["is_running"]:
+    #         self.start()
+    #     return result
+
     def show_some(self, length=10):
         if not self.is_running():
             self.start()
