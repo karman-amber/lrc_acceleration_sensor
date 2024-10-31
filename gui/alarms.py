@@ -116,7 +116,18 @@ class AlarmViewer(QWidget):
     def show_alarm(self, df, columns):
         self.table.setRowCount(df.shape[0])
         self.table.setColumnCount(df.shape[1] - 1)
-        self.table.setHorizontalHeaderLabels(columns[:-1])
+        dict_keys = {"alarm_id": "警情标识",
+                     "alarm_start_time": "开始时间",
+                     "alarm_end_time": "结束时间",
+                     "alarm_category": "报警类别",
+                     "alarm_name": "报警名称",
+                     "alarm_limit": "警情阈值",
+                     "alarm_min_value": "报警时最小值",
+                     "alarm_max_value": "报警值最大值",
+                     "alarm_interval": "持续秒数",
+                     "alarm_values": "警情数据"}
+        chinese_cols = [dict_keys[col] for col in columns[:-1]]
+        self.table.setHorizontalHeaderLabels(chinese_cols)
         for row in range(df.shape[0]):
             index = 0
             for col in columns:
@@ -124,7 +135,7 @@ class AlarmViewer(QWidget):
                 self.table.setItem(row, index, item)
                 index += 1
         self.table.resizeColumnsToContents()
-        self.df = df  # 保存DataFrame以供后续使用
+        self.df = df                # 保存DataFrame以供后续使用
         self.columns = columns
 
     def showDetail(self, item):
