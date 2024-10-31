@@ -34,7 +34,7 @@ class DetailDialog(QDialog):
         last_column_key = list(row_data.keys())[-1]
         last_column_data = row_data[last_column_key]
         try:
-            data_array = [int(x) / 100 for x in last_column_data.split('-')]
+            data_array = [float(x) for x in last_column_data.split(',')]
 
             # 创建图表
             plt.rcParams['font.family'] = 'SimHei'  # 设置字体为黑体
