@@ -59,8 +59,8 @@ def get_time_stamp():
 
 class Sensor:
     def __init__(self, name, ):
-        self.float_places = 3
-        self.before_alarm_count = 100
+        self.float_places = 4
+        self.before_alarm_count = 20
         self.queue_cache_size = 500
         self.name = name
         self.com = communication.Com(None)
@@ -70,7 +70,9 @@ class Sensor:
         self.y = queue.Queue(maxsize=max_size)
         self.z = queue.Queue(maxsize=max_size)
         self.r = queue.Queue(maxsize=max_size)
-
+        self.max_acc = [0.0, 0.0, 0.0, 0.0]  # 振动量的最大值，取值x, y, z, r的绝对值
+        self.error_count = 0
+        self.start_time = get_time_stamp()
         self.alarm = None
         self.mqtt = None
         self.sensor_status = None
@@ -80,6 +82,7 @@ class Sensor:
         self.com.start()
         if self.sensor_status:
             self.sensor_status["is_running"] = True
+        self.start_time = get_time_stamp()
         self.status = "running"
         timer = get_time_stamp()
         protocol = self.com.protocol
@@ -88,6 +91,7 @@ class Sensor:
                 print("set message error", utils.bytes_to_hex(data))
                 continue
             if not protocol.is_right():
+                self.error_count += 1
                 continue
             if not self.is_running:
                 break
@@ -125,16 +129,17 @@ class Sensor:
                         if self.alarm.is_same(alarm_type, alarm_name, alarm_limit, 1):  # 同一报警，存储其报警时的数据
                             self.alarm.add(alarm_value)
                             self.alarm.end_time = get_time_stamp()
-                except Exception as ex:                 # 此处还需要处理错误事件
+                except Exception as ex:  # 此处还需要处理错误事件
                     utils.debug(["解码警情错误:", ex, utils.bytes_to_hex(data)])
+                    self.alarm = None
             else:
                 if self.alarm is not None:  # 处于报警状态中
                     timer = get_time_stamp()
-                    # self.alarm.end_time = timer
-                    if timer - self.alarm.end_time > 1:
+                    if timer - self.alarm.end_time > 1000:
                         utils.debug(f"Alarm ends: type {self.alarm.category}, name {self.alarm.name}, "
-                                    f"limit {self.alarm.limit}, max value {round(np.max(self.alarm.values), 2)}, "
-                                    f"last {round(self.alarm.interval(), 2)} seconds")
+                                    f"limit {self.alarm.limit}, "
+                                    f"max value {round(np.max(np.abs(self.alarm.values)), self.float_places)}, "
+                                    f"last {round(self.alarm.interval(), self.float_places)} seconds")
                         self.save_alarm()
                         self.alarm = None
                         timer = get_time_stamp()
@@ -146,6 +151,7 @@ class Sensor:
                             self.push(result)
                     except Exception as ex:
                         utils.debug(["数据转化错误", ex, utils.bytes_to_hex(data)])
+
             if get_time_stamp() - timer > 2000:
                 timer = get_time_stamp()
                 utils.debug(self.status)
@@ -166,6 +172,7 @@ class Sensor:
             if self.mqtt is not None:
                 self.mqtt.publish(f"lrc/sensor/{p}", f"{value}")
             q.put(value)
+            self.max_acc[index] = max(self.max_acc[index], round(abs(value), self.float_places))
             index += 1
 
     def save_alarm(self):
@@ -210,6 +217,10 @@ class Sensor:
         self.queue_cache_size = queue_cache_size
         self.before_alarm_count = before_alarm_count
         self.float_places = float_places
+
+    def clear(self):
+        self.error_count = 0
+        self.max_acc = [0.0, 0.0, 0.0, 0.0]
 
     def on_message(self, client, userdata, msg):
         try:
