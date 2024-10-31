@@ -169,8 +169,14 @@ class Sensor:
         for value in result:
             p = params[index]
             q = queues[index]
+            self.max_acc[index] = max(self.max_acc[index], round(abs(value), self.float_places))
             if self.mqtt is not None:
                 self.mqtt.publish(f"lrc/sensor/{p}", f"{value}")
+                if (self.start_time - get_time_stamp()) % 2000 == 0:        # 每隔两秒发布一次计算的参考值
+                    ref = {"max_x": self.max_acc[0], "max_y": self.max_acc[1],
+                           "max_z": self.max_acc[2], "max_r": self.max_acc[3],
+                           "error_count": self.error_count}
+                    self.mqtt.publish("lrc/sensor/ref", f"{json.dumps(ref)}")
             q.put(value)
             self.max_acc[index] = max(self.max_acc[index], round(abs(value), self.float_places))
             index += 1
@@ -235,6 +241,8 @@ class Sensor:
                 result = self.com.stop()
                 if result:
                     self.sensor_status["is_running"] = False
+            elif cmd == "clear":
+                self.clear()
             elif cmd == "set_thresholds":
                 params = [float(i) for i in params.split(",")]
                 result = self.com.set_thresholds(params)
