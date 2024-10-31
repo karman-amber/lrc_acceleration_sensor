@@ -5,7 +5,8 @@ import serial
 import time
 import core.utils as utils
 from core.utils import debug
-from core.protocol import Protocol, HEADER_BYTES,HEADER_LENGTH, TYPE_LENGTH, RESERVED_LENGTH,LENGTH_FIELD_SIZE,CHECKSUM_LENGTH
+from core.protocol import Protocol, HEADER_BYTES, HEADER_LENGTH, TYPE_LENGTH, RESERVED_LENGTH, LENGTH_FIELD_SIZE, \
+    CHECKSUM_LENGTH
 
 
 class Com:
@@ -75,13 +76,13 @@ class Com:
         data = self.__query__(1)
         if data:
             return data[9:-1].decode()
-        return None
+        return -1
 
     def get_id(self):
         data = self.__query__(2)
         if data:
             return utils.bytes_to_hex(data[9:-1])
-        return None
+        return -1
 
     def stop(self):
         if self.is_running():
@@ -269,39 +270,18 @@ class Com:
     def get_thresholds(self):
         self.clear()
         data = self.__query__(10)
-        # x = struct.unpack('<f', data[9:13])[0]
-        # y = struct.unpack('<f', data[13:17])[0]
-        # z = struct.unpack('<f', data[17:21])[0]
-        # rmse = struct.unpack('<f', data[21:25])[0]
-        # r = struct.unpack('<f', data[25:29])[0]
         if self.protocol.message_number() - 128 == 10:
             [x, y, z, rmse, r] = self.protocol.to_floats()
             return {"x": x, "y": y, "z": z, "rmse": rmse, "r": r}
         return None
 
     def set_thresholds(self, params):
-        # payload = b'\x55\xbb\x09\x00\x00\x00\x00\x00\x14'
-        # payload += struct.pack('<f', x)
-        # payload += struct.pack('<f', y)
-        # payload += struct.pack('<f', z)
-        # payload += struct.pack('<f', rmse)
-        # payload += struct.pack('<f', r)
-        # a = payload[2]
-        # for i in range(3, len(payload)):
-        #     a = a ^ payload[i]
-        # payload += a.to_bytes(1, 'big')
         x, y, z, rmse, r = params
         payload = self.protocol.message_with_floats(9, [x, y, z, rmse, r])
-        # self.send_data(payload)
-        # data = self.read_data()
-        # return data
         self.__request__(payload)
         if self.protocol.message_number() == 137:
             return True
         return False
-
-    # def set_thresholds(self, params):
-    #     return self.set_thresholds(params["x"], params["y"], params["z"], params["rmse"], params["r"])
 
     def get_halt_reset_seconds(self):
         """
@@ -309,7 +289,6 @@ class Com:
         :return: 秒数， -1表示未读取成功
         """
         data = self.__query__(20)
-        # self.protocol.set_message(data)
         if self.protocol.message_number() == 148:  # 0x94号消息
             return int.from_bytes(data[9:10], 'big')
         return -1
@@ -320,11 +299,7 @@ class Com:
         :param seconds: 秒数
         :return: 成功返回True，失败返回False
         """
-        # payload = self.request_payload(19, seconds, 1)
         payload = self.protocol.message_with_integers(19, [seconds], per_int_size=1)
-        # self.send_data(payload)
-        # data = self.read_data()
-        # self.protocol.set_message(data)
         self.__request__(payload)
         if self.protocol.message_number() == 147:
             return True
@@ -335,14 +310,8 @@ class Com:
         获取开关状态，0表示关机，1表示开机
         :return: 开关状态， -1表示未读取成功
         """
-        # payload = self.query_payload(23)  # 0x17消息指的是各个阈值的开关状态
-        # payload = self.protocol.create_request_message(23)
-        # self.send_data(payload)
-        # data = self.read_data()
         data = self.__query__(23)
-        # self.protocol.set_message(data)
         if self.protocol.message_number() == 151:
-
             return self.decode_switches(int.from_bytes(data[9:10], 'big'))
         return -1
 
@@ -375,11 +344,7 @@ class Com:
             switch += 8
         if rmse:
             switch += 16
-        # payload = self.request_payload(22, switch, 1)
         payload = self.protocol.message_with_integers(22, [switch], 1)
-        # self.send_data(payload)
-        # data = self.read_data()
-        # self.protocol.set_message(data)
         self.__request__(payload)
         if self.protocol.message_number() == 150:
             return True
@@ -401,7 +366,7 @@ class Com:
     def get_measure_range(self):
         data = self.__query__(38)
         if self.protocol.message_number() == 166:
-            return int.from_bytes(data[9:10], 'big') * 10
+            return int.from_bytes(data[9:10], 'little') * 10
         return -1
 
     def set_measure_range(self, value):
@@ -470,25 +435,6 @@ class Com:
         if result["is_running"]:
             self.start()
         return result
-
-    # def set_status(self, params):
-    #     is_running = self.is_running()
-    #     self.stop()
-    #     # result["id"] = self.get_id()
-    #     # result["version"] = self.get_version()
-    #     x, y, z, rmse, r = params["thresholds"]
-    #     self.set_thresholds([x, y, z, rmse, r])
-    #     # result["thresholds"] = self.get_thresholds()
-    #     result["transmit_frequency"] = self.get_transmit_frequency()
-    #     result["measure_range"] = self.get_measure_range()
-    #     result["work_mode"] = self.get_work_mode()
-    #     # result["relay_switch"] = self.get_relay_switch()
-    #     # result["temperature"] = round(self.get_temperature(), 1)
-    #     result["halt_reset_seconds"] = self.get_halt_reset_seconds()
-    #     result["chip_frequency"] = self.get_chip_frequency()
-    #     if result["is_running"]:
-    #         self.start()
-    #     return result
 
     def show_some(self, length=10):
         if not self.is_running():
