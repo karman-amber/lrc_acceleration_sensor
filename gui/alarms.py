@@ -10,6 +10,8 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QTableWidget, QTableWidgetIt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+
 # from web_api.lrc_client import LrcClient
 
 
@@ -21,13 +23,23 @@ class DetailDialog(QDialog):
         self.resize(800, 600)
 
         layout = QVBoxLayout()
-
+        # dict_keys = list(row_data.keys())
+        dict_keys = {"alarm_id": "警情标识",
+                     "alarm_start_time": "开始时间",
+                     "alarm_end_time": "结束时间",
+                     "alarm_category": "报警类别",
+                     "alarm_name": "报警名称",
+                     "alarm_limit": "警情阈值",
+                     "alarm_min_value": "报警时最小值",
+                     "alarm_max_value": "报警值最大值",
+                     "alarm_interval": "持续秒数",
+                     "alarm_values": "警情数据"}
         # 创建网格布局用于显示数据
         grid_layout = QGridLayout()
         for i, (key, value) in enumerate(row_data.items()):
             if i == len(row_data.items()) - 1:  # 跳过最后一列，因为它将用于绘图
                 continue
-            grid_layout.addWidget(QLabel(f"{key}:"), i, 0)
+            grid_layout.addWidget(QLabel(f"{dict_keys[key]}:"), i, 0)
             grid_layout.addWidget(QLabel(str(value)), i, 1)
 
         # 获取最后一列的数据并转换为数组
@@ -127,7 +139,6 @@ def main():
     viewer = AlarmViewer()
     viewer.show()
     sys.exit(app.exec_())
-
 
 # if __name__ == '__main__':
 #     main()
