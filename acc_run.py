@@ -61,13 +61,14 @@ if __name__ == '__main__':
             config.sensor.thresholds = v.com.get_thresholds()
             config.sensor.work_mode = v.com.get_work_mode()
             config.sensor.halt_reset_seconds = v.com.get_halt_reset_seconds()
-            # config.sensor.relay_switch = v.com.get_relay_switch()
             config.sensor.measure_range = v.com.get_measure_range()
             config.sensor.transmit_frequency = v.com.get_transmit_frequency()
-            # config.mqtt.ip = v.mqtt.ip
-            # config.mqtt.port = v.mqtt.port
-            config.to_json_file(config_file_path)
-            debug("传感器配置保存本地成功.")
+            s = config.sensor
+            if s.work_mode != -1 and s.halt_reset_seconds != -1 and s.measure_range != -1 and s.transmit_frequency != -1:
+                config.to_json_file(config_file_path)
+                debug("传感器配置保存本地成功.")
+            else:
+                debug("传感器配置获取错误，保存本地失败.")
             v.mqtt.loop_stop()
             v.mqtt.disconnect()
             break
