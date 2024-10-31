@@ -29,7 +29,9 @@ class Sensor:
 class Config:
     mqtt: Mqtt
     sensor: Sensor
-
+    queue_cache_size: int
+    before_alarm_count: int
+    float_places: int
     # email: Optional[str] = None
     # addresses: List[Address] = attr.Factory(list)
     # created_at: datetime = attr.Factory(datetime.now)
@@ -76,41 +78,41 @@ class Config:
 
 
 # 使用示例
-def main():
-    # 创建示例数据
-    mqtt = Mqtt(ip="127.0.0.1", port=1883, user="", password="")
-    sensor = Sensor(work_mode=0, thresholds={"x": 50, "y": 50, "z": 50, "r": 50, "rmse": 50},
-                    switches={"x": True, "y": True, "z": True, "r": False, "rmse": False}, halt_reset_seconds=5,
-                    shutdown_switch=1, measure_range=40,  transmit_frequency=100, relay_switch=0)
-
-    config = Config(
-        mqtt=mqtt,
-        sensor=sensor
-    )
-
-    # 保存到文件
-    config.to_json_file("config.json")
-    print(f"Config data saved to config.json")
-
-    # 从文件加载
-    loaded_config = Config.from_json_file("config.json")
-    print(f"Loaded config: {loaded_config}")
-
-    # 验证数据
-    assert loaded_config.mqtt.ip == config.mqtt.ip
-    assert loaded_config.mqtt.port == config.mqtt.port
-    assert loaded_config.mqtt.user == config.mqtt.user
-    assert loaded_config.mqtt.password == config.mqtt.password
-    assert loaded_config.sensor.work_mode == config.sensor.work_mode
-    assert loaded_config.sensor.thresholds == config.sensor.thresholds
-    assert loaded_config.sensor.switches == config.sensor.switches
-    assert loaded_config.sensor.halt_reset_seconds == config.sensor.halt_reset_seconds
-    assert loaded_config.sensor.baud == config.sensor.baud
-    assert loaded_config.sensor.protocol_header == config.sensor.protocol_header
-    # assert loaded_config.age == config.age
-    # assert len(loaded_config.addresses) == len(config.addresses)
-    print("Data verification passed!")
-
-
-if __name__ == "__main__":
-    main()
+# def main():
+#     # 创建示例数据
+#     mqtt = Mqtt(ip="127.0.0.1", port=1883, user="", password="")
+#     sensor = Sensor(work_mode=0, thresholds={"x": 50, "y": 50, "z": 50, "r": 50, "rmse": 50},
+#                     switches={"x": True, "y": True, "z": True, "r": False, "rmse": False}, halt_reset_seconds=5,
+#                     shutdown_switch=1, measure_range=40,  transmit_frequency=100, relay_switch=0)
+#
+#     config = Config(
+#         mqtt=mqtt,
+#         sensor=sensor
+#     )
+#
+#     # 保存到文件
+#     config.to_json_file("config.json")
+#     print(f"Config data saved to config.json")
+#
+#     # 从文件加载
+#     loaded_config = Config.from_json_file("config.json")
+#     print(f"Loaded config: {loaded_config}")
+#
+#     # 验证数据
+#     assert loaded_config.mqtt.ip == config.mqtt.ip
+#     assert loaded_config.mqtt.port == config.mqtt.port
+#     assert loaded_config.mqtt.user == config.mqtt.user
+#     assert loaded_config.mqtt.password == config.mqtt.password
+#     assert loaded_config.sensor.work_mode == config.sensor.work_mode
+#     assert loaded_config.sensor.thresholds == config.sensor.thresholds
+#     assert loaded_config.sensor.switches == config.sensor.switches
+#     assert loaded_config.sensor.halt_reset_seconds == config.sensor.halt_reset_seconds
+#     assert loaded_config.sensor.baud == config.sensor.baud
+#     assert loaded_config.sensor.protocol_header == config.sensor.protocol_header
+#     # assert loaded_config.age == config.age
+#     # assert len(loaded_config.addresses) == len(config.addresses)
+#     print("Data verification passed!")
+#
+#
+# if __name__ == "__main__":
+#     main()
