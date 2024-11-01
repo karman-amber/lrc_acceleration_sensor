@@ -62,6 +62,7 @@ class Sensor:
         self.float_places = 4
         self.before_alarm_count = 20
         self.queue_cache_size = 500
+        self.publish_original = True
         self.name = name
         self.com = communication.Com(None)
         self.status = "unknown"
@@ -87,6 +88,8 @@ class Sensor:
         timer = get_time_stamp()
         protocol = self.com.protocol
         for data in self.com.get_data():
+            if self.mqtt is not None and self.publish_original:
+                self.mqtt.publish(f"lrc/sensor/original", f"{utils.bytes_to_hex(data)}")
             if not protocol.set_message(data):
                 print("set message error", utils.bytes_to_hex(data))
                 continue
@@ -219,10 +222,19 @@ class Sensor:
     def get_sensor_status(self):
         self.sensor_status = self.com.get_status()
 
-    def set_params(self, queue_cache_size, before_alarm_count, float_places):
+    def set_params(self, queue_cache_size, before_alarm_count, float_places, publish_original):
+        """
+        设置运行时参数
+        :param queue_cache_size:缓存大小
+        :param before_alarm_count: 警情前多少个数据用于保存
+        :param float_places: 存储数据的小数点位
+        :param publish_original: 是否发布原始数据
+        :return:
+        """
         self.queue_cache_size = queue_cache_size
         self.before_alarm_count = before_alarm_count
         self.float_places = float_places
+        self.publish_original = publish_original
 
     def clear(self):
         self.error_count = 0
