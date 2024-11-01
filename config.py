@@ -32,6 +32,7 @@ class Config:
     queue_cache_size: int
     before_alarm_count: int
     float_places: int
+    publish_original: bool
     # email: Optional[str] = None
     # addresses: List[Address] = attr.Factory(list)
     # created_at: datetime = attr.Factory(datetime.now)
