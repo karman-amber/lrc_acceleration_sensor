@@ -33,23 +33,8 @@ if __name__ == '__main__':
     if v.mqtt is None:
         debug("mqtt连接失败！")
     try:
-        # status_dict = v.com.get_status()
-        # # 转换为DeviceStatus对象
-        # thresholds = AlarmThresholds(**status_dict['thresholds'])
-        # status = SensorStatus(
-        #     is_running=status_dict['is_running'],
-        #     id=status_dict['id'],
-        #     version=status_dict['version'],
-        #     thresholds=thresholds,
-        #     transmit_frequency=status_dict['transmit_frequency'],
-        #     measure_range=status_dict['measure_range'],
-        #     work_mode=status_dict['work_mode'],
-        #     temperature=status_dict['temperature'],
-        #     halt_reset_seconds=status_dict['halt_reset_seconds'],
-        #     chip_frequency=status_dict['chip_frequency']
-        # )
-        # v.set_config(status)
         v.get_sensor_status()
+        v.set_params(config.queue_cache_size, config.before_alarm_count, config.float_places, config.publish_original)
     except Exception as e:
         print(f"Error parsing status message: {e}")
     v.run()
