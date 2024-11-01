@@ -159,22 +159,6 @@ class ConfigWidget(QWidget):
         status.work_mode = int(self.work_mode_combo.currentText())
         status.chip_frequency = int(self.chip_freq_combo.currentText())
         return status
-        # return {
-        #     "is_running": self.config_data["is_running"],
-        #     "id": self.config_data["id"],
-        #     "version": self.config_data["version"],
-        #     "thresholds": {
-        #         "x": self.thresholds_x,
-        #         "y": self.thresholds_y,
-        #         "z": self.thresholds_z
-        #     },
-        #     "transmit_frequency": int(self.transmit_freq_combo.currentText()),
-        #     "measure_range": self.measure_range_spin.value(),
-        #     "work_mode": int(self.work_mode_combo.currentText()),
-        #     "temperature": self.config_data["temperature"],
-        #     "halt_reset_seconds": self.halt_reset_spin.value(),
-        #     "chip_frequency": int(self.chip_freq_combo.currentText())
-        # }
 
     def save_config(self):
         """保存配置"""

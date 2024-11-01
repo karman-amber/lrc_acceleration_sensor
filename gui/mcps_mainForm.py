@@ -213,6 +213,7 @@ class MainWindow(QMainWindow):
         # 创建设备管理器实例
         device_manager = SensorManager()
 
+        self.sensor_config = None
         # 获取状态
         device_manager.get_status(status_handler)
 

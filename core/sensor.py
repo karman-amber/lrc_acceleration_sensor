@@ -245,15 +245,12 @@ class Sensor:
             command = msg.payload.decode()
             cmd, params = command.split(":")
             result = True
-            if cmd == "start":
-                result = self.com.start()
-                if result:
-                    self.sensor_status["is_running"] = True
-            elif cmd == "stop":
-                result = self.com.stop()
-                if result:
-                    self.sensor_status["is_running"] = False
-            elif cmd == "clear":
+            cmds = ["start", "stop", "clear", "get_status", "get_status2",
+                    "set_thresholds", "set_halt_reset_seconds", "set_transmit_frequency",
+                    "set_relay_switch", "set_work_mode"]
+            if cmd in cmds:
+                self.com.stop()
+            if cmd == "clear":
                 self.clear()
             elif cmd == "set_thresholds":
                 params = [float(i) for i in params.split(",")]
@@ -296,6 +293,16 @@ class Sensor:
             elif cmd == "get_status2":
                 result = self.com.get_status()
                 self.mqtt.publish("lrc/sensor/status", json.dumps(result))
+            if self.sensor_status["is_running"]:
+                self.com.start()
+            if cmd == "start":
+                result = self.com.start()
+                if result:
+                    self.sensor_status["is_running"] = True
+            elif cmd == "stop":
+                result = self.com.stop()
+                if result:
+                    self.sensor_status["is_running"] = False
             utils.debug(f"Received command: {cmd}, params: {params}, result is {result}")
         except Exception as e:
             print(f"Error processing message: {e}")

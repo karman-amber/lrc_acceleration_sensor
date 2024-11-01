@@ -53,10 +53,8 @@ class MqttClient:
     def is_online(self):
         return self.status == "online"
 
-    def publish(self, message, topic=None):
+    def publish(self, topic, message):
         if self.is_online():
-            if topic is None:
-                topic = TOPIC
             try:
                 self.mqtt_client.publish(topic, message)
                 return True
@@ -94,11 +92,11 @@ class MqttClient:
             self.thread = None
 
 
-if __name__ == '__main__':
-    client1 = MqttClient()
-    client1.connect("127.8.8.229", 1883)
-    client1.start_subscribe()
-    client1.publish("Hello, MQTT!")
-    client1.publish("Hello, MQTT2!")
-    client1.publish("Hello, MQTT3!")
-    client1.stop_subscribe()
+# if __name__ == '__main__':
+#     client1 = MqttClient()
+#     client1.connect("127.8.8.229", 1883)
+#     client1.start_subscribe()
+#     client1.publish("Hello, MQTT!")
+#     client1.publish("Hello, MQTT2!")
+#     client1.publish("Hello, MQTT3!")
+#     client1.stop_subscribe()
