@@ -69,7 +69,8 @@ class MqttClient:
     def start_subscribe(self, topics=None, queue_max_count=200):
         if self.thread is None:
             if topics is None:
-                topics = ["lrc/sensor/x", "lrc/sensor/y", "lrc/sensor/z", "lrc/sensor/r"]
+                topics = ["lrc/sensor/x", "lrc/sensor/y", "lrc/sensor/z", "lrc/sensor/r",
+                          "lrc/sensor/status", "lrc/sensor/ref"]
             for topic in topics:
                 self.mqtt_client.subscribe(topic)
 
