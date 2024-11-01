@@ -104,12 +104,14 @@ class AlarmViewer(QWidget):
         if data is None:
             return
         df = pd.DataFrame(data['data'])
+        df = df.sort_values(by='alarm_start_time', ascending=False)
         return df, columns
 
     def load_local_alarm(self):
         # 读取本地CSV文件
         filename = 'db/lrc_alarm.csv'
         df = pd.read_csv(filename)
+        df = df.sort_values(by='alarm_start_time', ascending=False)
         columns = df.columns.tolist()
         return df, columns
 
