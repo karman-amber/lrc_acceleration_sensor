@@ -4,7 +4,7 @@ import struct
 
 import core.utils as utils
 
-HEADER_BYTES = b'\x55\xbb'
+HEADER_BYTES = b'\x66\x99'
 # HEADER_BYTES = bytes([0x55, 0xBB])
 HEADER_LENGTH = 2
 TYPE_LENGTH = 1
@@ -12,11 +12,38 @@ RESERVED_LENGTH = 4
 LENGTH_FIELD_SIZE = 2
 CHECKSUM_LENGTH = 1
 
+QUERY_VERSION = 0x20
+QUERY_ID = 0x21
+QUERY_TEMPERATURE = 0x22
+QUERY_START = 0x23
+QUERY_STOP = 0x24
+QUERY_SAMPLE_FREQUENCY = 0x25
+SET_SAMPLE_FREQUENCY = 0x26
+QUERY_REBOOT = 0x27
+SET_THRESHOLDS = 0x28
+QUERY_THRESHOLDS = 0x29
+SET_WORK_MODE = 0x2A
+QUERY_WORK_MODE = 0x2B
+SET_ALARM_SWITCH = 0x2C
+QUERY_ALARM_SWITCH = 0x2D
+QUERY_HALT_RESET_SECONDS = 0x2E
+SET_HALT_RESET_SECONDS = 0x2F
+SET_RELAY_SWITCH = 0x30
+SET_MONITOR_MODE = 0x31
+QUERY_MONITOR_MODE = 0x32
+SET_ACC_RANGE = 0x36
+QUERY_ACC_RANGE = 0x37
+SET_REPORT_FREQUENCY = 0x38
+QUERY_REPORT_FREQUENCY = 0x39
+
+REPORT_SIGN = 0xEE
+ALARM_SIGN = 0xCC
+
 class Protocol:
 
     def __init__(self):
         self.message_bytes = None
-        self.header = b'\x55\xbb'
+        self.header = HEADER_BYTES
         self.message_type = b'\x00'
         self.reserved = b'\x00\x00\x00\x00'
         self.message_sub_type = 0
@@ -29,7 +56,7 @@ class Protocol:
 
     def create_request_message(self, message_type: int):
         self.message_type = message_type.to_bytes(1, 'little')
-        message = b"\x55\xbb" + self.message_type + b"\x00\x00\x00\x00"
+        message = HEADER_BYTES + self.message_type + self.reserved
         message += self.pack_message_length(0, 0)
         a = utils.get_parity(message[len(self.header):])
         message += a.to_bytes(1, 'little')
