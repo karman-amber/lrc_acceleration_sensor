@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import paho.mqtt.client as mqtt
 from core.base import SensorStatus
+import core.protocol as ptl
 
 max_size = 500
 
@@ -147,7 +148,7 @@ class Sensor:
                         self.alarm = None
                         timer = get_time_stamp()
                         self.status = "running"
-                if protocol.message_number() == 33:  # 如果是正常的加速度速度，则将其缓存为固定大小的队列中
+                if protocol.message_number() == ptl.REPORT_SIGN:  # 如果是正常的加速度速度，则将其缓存为固定大小的队列中
                     try:
                         result = protocol.to_floats()
                         if result is not None:

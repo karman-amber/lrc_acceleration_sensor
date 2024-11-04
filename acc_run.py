@@ -16,7 +16,7 @@ if __name__ == '__main__':
     config_file_path = sys.argv[1] if len(sys.argv) > 1 else "config.json"
     config = Config.from_json_file(config_file_path)
     debug("传感器配置加载成功.")
-    v.com.set_switches(rmse=config.sensor.switches["rmse"], x=config.sensor.switches["x"],
+    v.com.set_monitor_mode(rmse=config.sensor.switches["rmse"], x=config.sensor.switches["x"],
                        y=config.sensor.switches["y"], z=config.sensor.switches["z"], r=config.sensor.switches["r"])
     v.com.set_thresholds([config.sensor.thresholds["x"], config.sensor.thresholds["y"],
                           config.sensor.thresholds["z"], config.sensor.thresholds["r"],
@@ -42,7 +42,7 @@ if __name__ == '__main__':
         user_input = input("请输入指令 (输入 'stop' 退出): \n")
         if user_input.lower() == 'stop':
             v.stop()
-            config.sensor.switches = v.com.get_switches()
+            config.sensor.switches = v.com.get_monitor_mode()
             config.sensor.thresholds = v.com.get_thresholds()
             config.sensor.work_mode = v.com.get_work_mode()
             config.sensor.halt_reset_seconds = v.com.get_halt_reset_seconds()

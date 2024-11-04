@@ -26,8 +26,8 @@ SET_WORK_MODE = 0x2A
 QUERY_WORK_MODE = 0x2B
 SET_ALARM_SWITCH = 0x2C
 QUERY_ALARM_SWITCH = 0x2D
-QUERY_HALT_RESET_SECONDS = 0x2E
-SET_HALT_RESET_SECONDS = 0x2F
+SET_HALT_RESET_SECONDS = 0x2E
+QUERY_HALT_RESET_SECONDS = 0x2F
 SET_RELAY_SWITCH = 0x30
 SET_MONITOR_MODE = 0x31
 QUERY_MONITOR_MODE = 0x32
@@ -38,6 +38,7 @@ QUERY_REPORT_FREQUENCY = 0x39
 
 REPORT_SIGN = 0xEE
 ALARM_SIGN = 0xCC
+
 
 class Protocol:
 
@@ -169,7 +170,7 @@ class Protocol:
         return self.message_type[0]
 
     def is_alarm(self):
-        return self.message_type == b'\x33'
+        return self.message_type == ALARM_SIGN
 
     def decode_alarm(self):
         data = self.message_bytes
