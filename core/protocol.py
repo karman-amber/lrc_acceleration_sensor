@@ -4,40 +4,69 @@ import struct
 
 import core.utils as utils
 
-HEADER_BYTES = b'\x66\x99'
-# HEADER_BYTES = bytes([0x55, 0xBB])
 HEADER_LENGTH = 2
 TYPE_LENGTH = 1
 RESERVED_LENGTH = 4
 LENGTH_FIELD_SIZE = 2
 CHECKSUM_LENGTH = 1
 
-QUERY_VERSION = 0x20
-QUERY_ID = 0x21
-QUERY_TEMPERATURE = 0x22
-QUERY_START = 0x23
-QUERY_STOP = 0x24
-QUERY_SAMPLE_FREQUENCY = 0x25
+# HEADER_BYTES = b'\x55\xBB'
+# GET_VERSION = 0x01
+# GET_ID = 0x02
+# GET_TEMPERATURE = 0x03
+# GET_START = 0x04
+# GET_STOP = 0x05
+# GET_SAMPLE_FREQUENCY = 0x06
+# SET_SAMPLE_FREQUENCY = 0x07
+# GET_REBOOT = 0x08
+# SET_THRESHOLDS = 0x09
+# GET_THRESHOLDS = 0x0A
+# SET_WORK_MODE = 0x0F
+# GET_WORK_MODE = 0x10
+# SET_ALARM_SWITCH = 0x11
+# GET_ALARM_SWITCH = 0x12
+# SET_HALT_RESET_SECONDS = 0x13
+# GET_HALT_RESET_SECONDS = 0x14
+# SET_RELAY_SWITCH = 0x15
+# SET_MONITOR_MODE = 0x16
+# GET_MONITOR_MODE = 0x17
+# SET_ACC_RANGE = 0x25
+# GET_ACC_RANGE = 0x26
+# SET_REPORT_FREQUENCY = 0x27
+# GET_REPORT_FREQUENCY = 0x28
+#
+# REPORT_SIGN = 0x21
+# ALARM_SIGN = 0x33
+# RESERVED_BYTES = b'\x00\x00\x00\x00'
+
+HEADER_BYTES = b'\x66\x99'
+GET_VERSION = 0x20
+GET_ID = 0x21
+GET_TEMPERATURE = 0x22
+GET_START = 0x23
+GET_STOP = 0x24
+GET_SAMPLE_FREQUENCY = 0x25
 SET_SAMPLE_FREQUENCY = 0x26
-QUERY_REBOOT = 0x27
+GET_REBOOT = 0x27
 SET_THRESHOLDS = 0x28
-QUERY_THRESHOLDS = 0x29
+GET_THRESHOLDS = 0x29
 SET_WORK_MODE = 0x2A
-QUERY_WORK_MODE = 0x2B
+GET_WORK_MODE = 0x2B
 SET_ALARM_SWITCH = 0x2C
-QUERY_ALARM_SWITCH = 0x2D
+GET_ALARM_SWITCH = 0x2D
 SET_HALT_RESET_SECONDS = 0x2E
-QUERY_HALT_RESET_SECONDS = 0x2F
+GET_HALT_RESET_SECONDS = 0x2F
 SET_RELAY_SWITCH = 0x30
 SET_MONITOR_MODE = 0x31
-QUERY_MONITOR_MODE = 0x32
+GET_MONITOR_MODE = 0x32
 SET_ACC_RANGE = 0x36
-QUERY_ACC_RANGE = 0x37
+GET_ACC_RANGE = 0x37
 SET_REPORT_FREQUENCY = 0x38
-QUERY_REPORT_FREQUENCY = 0x39
+GET_REPORT_FREQUENCY = 0x39
 
 REPORT_SIGN = 0xEE
 ALARM_SIGN = 0xCC
+RESERVED_BYTES = b'\x00\x00\x00\x00'
 
 
 class Protocol:
@@ -46,7 +75,7 @@ class Protocol:
         self.message_bytes = None
         self.header = HEADER_BYTES
         self.message_type = b'\x00'
-        self.reserved = b'\x00\x00\x00\x00'
+        self.reserved = RESERVED_BYTES
         self.message_sub_type = 0
         self.message_length = 0
         self.message_body = bytes()
@@ -170,7 +199,7 @@ class Protocol:
         return self.message_type[0]
 
     def is_alarm(self):
-        return self.message_type == ALARM_SIGN
+        return self.message_type[0] == ALARM_SIGN
 
     def decode_alarm(self):
         data = self.message_bytes
@@ -181,3 +210,6 @@ class Protocol:
             alarm_limit = struct.unpack('<f', data[15:19])[0]
             return alarm_type, alarm_name, alarm_value, alarm_limit
         return None
+
+    def to_string(self):
+        return utils.bytes_to_hex(self.message_bytes)

@@ -80,7 +80,7 @@ class Sensor:
         self.sensor_status = None
 
     def start(self):
-        self.com.auto_search()
+        # self.com.auto_search()
         self.com.start()
         if self.sensor_status:
             self.sensor_status["is_running"] = True
@@ -124,8 +124,9 @@ class Sensor:
                             elif alarm_name == "rmse":
                                 pre_data = self.r.queue.copy()
                             #
-                            for i in range(self.before_alarm_count):
-                                self.alarm.add(pre_data[i])
+                            if pre_data:
+                                for i in range(min(self.before_alarm_count, len(pre_data))):
+                                    self.alarm.add(pre_data[i])
 
                             self.alarm.add(alarm_value)
                             self.alarm.end_time = self.alarm.start_time
@@ -173,7 +174,11 @@ class Sensor:
         for value in result:
             p = params[index]
             q = queues[index]
-            self.max_acc[index] = max(self.max_acc[index], round(abs(value), self.float_places))
+            max_v = round(abs(value), self.float_places)
+            if max_v >= self.max_acc[index]:
+                self.max_acc[index] = max_v
+                utils.debug([f"{p}轴的最大值是{value}"])
+            # self.max_acc[index] = max(self.max_acc[index], round(abs(value), self.float_places))
             if self.mqtt is not None:
                 self.mqtt.publish(f"lrc/sensor/{p}", f"{value}")
                 if (self.start_time - get_time_stamp()) % 2000 == 0:        # 每隔两秒发布一次计算的参考值

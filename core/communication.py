@@ -74,13 +74,14 @@ class Com:
             return None
 
     def get_version(self):
-        data = self.__query__(protocol.QUERY_VERSION)
+        data = self.__query__(protocol.GET_VERSION)
+
         if data:
             return data[9:-1].decode()
         return -1
 
     def get_id(self):
-        data = self.__query__(protocol.QUERY_ID)
+        data = self.__query__(protocol.GET_ID)
         if data:
             return utils.bytes_to_hex(data[9:-1])
         return -1
@@ -88,12 +89,12 @@ class Com:
     def stop(self):
         if self.is_running():
             # self.send_data(self.query_payload(5))
-            self.__query__(protocol.QUERY_STOP)
+            self.__query__(protocol.GET_STOP)
             self.clear()
             count = 0
             time.sleep(0.01)
             while self.is_running():
-                self.stop()
+                self.__query__(protocol.GET_STOP)
                 count += 1
                 if count >= 10:
                     return False
@@ -105,13 +106,13 @@ class Com:
     def start(self):
         # payload = self.query_payload(4)
         # self.send_data(payload)
-        self.__query__(protocol.QUERY_START)
+        data = self.__query__(protocol.GET_START)
         count = 0
         while not self.is_running():
-            self.stop()
-            self.clear()
-            self.__query__(protocol.QUERY_START)
-            data = self.read_data()
+            # self.stop()
+            # self.clear()
+            data = self.__query__(protocol.GET_START)
+            # data = self.read_data()
             if data:
                 print(utils.bytes_to_hex(data))
             count += 1
@@ -125,7 +126,7 @@ class Com:
     def restart(self):
         self.clear()
         self.stop()
-        data = self.__query__(protocol.QUERY_REBOOT)
+        data = self.__query__(protocol.GET_REBOOT)
         if self.protocol.message_number() == 136:
             return True
         return False
@@ -193,7 +194,8 @@ class Com:
                         data +
                         checksum_byte
                 )
-                # debug(utils.bytes_to_hex(frame_data))
+                if type_byte == 0x33:
+                    debug(utils.bytes_to_hex(frame_data))
                 yield frame_data
             except Exception as e:
                 debug(f"Unexpected error: {e}")
@@ -240,13 +242,13 @@ class Com:
     def get_work_mode(self):
         if self.is_running():
             self.stop()
-        data = self.__query__(protocol.QUERY_WORK_MODE)
+        data = self.__query__(protocol.GET_WORK_MODE)
         return int.from_bytes(data[9:-1], 'big')
 
     def get_temperature(self):
         if self.is_running():
             self.stop()
-        data = self.__query__(protocol.QUERY_TEMPERATURE)
+        data = self.__query__(protocol.GET_TEMPERATURE)
         return struct.unpack('f', data[9:-1])[0]
 
     def set_work_mode(self, mode):
@@ -264,8 +266,8 @@ class Com:
 
     def get_thresholds(self):
         self.clear()
-        data = self.__query__(protocol.QUERY_THRESHOLDS)
-        if self.protocol.message_number() - 128 == protocol.QUERY_THRESHOLDS:
+        data = self.__query__(protocol.GET_THRESHOLDS)
+        if self.protocol.message_number() - 128 == protocol.GET_THRESHOLDS:
             [x, y, z, rmse, r] = self.protocol.to_floats()
             return {"x": x, "y": y, "z": z, "rmse": rmse, "r": r}
         return None
@@ -283,8 +285,8 @@ class Com:
         获取停机复位的秒数，指的是停机后，过了多长时间会复位，单位是秒
         :return: 秒数， -1表示未读取成功
         """
-        data = self.__query__(protocol.QUERY_HALT_RESET_SECONDS)
-        if self.protocol.message_number() == protocol.QUERY_HALT_RESET_SECONDS + 128:
+        data = self.__query__(protocol.GET_HALT_RESET_SECONDS)
+        if self.protocol.message_number() == protocol.GET_HALT_RESET_SECONDS + 128:
             return int.from_bytes(data[9:10], 'big')
         return -1
 
@@ -305,8 +307,8 @@ class Com:
         获取开关状态，0表示关机，1表示开机
         :return: 开关状态， -1表示未读取成功
         """
-        data = self.__query__(protocol.QUERY_MONITOR_MODE)
-        if self.protocol.message_number() == protocol.QUERY_MONITOR_MODE + 128:
+        data = self.__query__(protocol.GET_MONITOR_MODE)
+        if self.protocol.message_number() == protocol.GET_MONITOR_MODE + 128:
             return self.decode_switches(int.from_bytes(data[9:10], 'big'))
         return -1
 
@@ -346,8 +348,8 @@ class Com:
         return False
 
     def get_shutdown_switch(self):
-        data = self.__query__(protocol.QUERY_ALARM_SWITCH)
-        if self.protocol.message_number() == protocol.QUERY_ALARM_SWITCH + 128:
+        data = self.__query__(protocol.GET_ALARM_SWITCH)
+        if self.protocol.message_number() == protocol.GET_ALARM_SWITCH + 128:
             return int.from_bytes(data[9:10], 'big') == 1
         return False
 
@@ -359,22 +361,29 @@ class Com:
         return False
 
     def get_measure_range(self):
-        data = self.__query__(protocol.QUERY_ACC_RANGE)
-        if self.protocol.message_number() == protocol.QUERY_ACC_RANGE + 128:
-            return int.from_bytes(data[9:10], 'little') * 10
+        data = self.__query__(protocol.GET_ACC_RANGE)
+        if self.protocol.message_number() == protocol.GET_ACC_RANGE + 128:
+            result = int.from_bytes(data[9:10], 'little') * 10
+            if result == 30:
+                result = 40
+            return result
         return -1
 
     def set_measure_range(self, value):
-        payload = self.protocol.message_with_integers(protocol.SET_ACC_RANGE, [value // 10], per_int_size=1)
+        # if value == 10 or value == 20 or value == 40:
+        value = value // 10
+        if value == 4:
+            value = 3
+        payload = self.protocol.message_with_integers(protocol.SET_ACC_RANGE, [value], per_int_size=1)
         data = self.__request__(payload)
         if self.protocol.message_number() == protocol.SET_ACC_RANGE + 128:
             return True
         return False
 
     def get_transmit_frequency(self):
-        data = self.__query__(protocol.QUERY_REPORT_FREQUENCY)
-        if self.protocol.message_number() == protocol.QUERY_REPORT_FREQUENCY + 128:
-            return int.from_bytes(data[9:11], 'little')
+        data = self.__query__(protocol.GET_REPORT_FREQUENCY)
+        if self.protocol.message_number() == protocol.GET_REPORT_FREQUENCY + 128:
+            return int.from_bytes(data[9:10], 'little')
         return -1
 
     def set_transmit_frequency(self, freq):
@@ -399,8 +408,8 @@ class Com:
     def get_chip_frequency(self):
         freq_dict = {0: 4000, 1: 2000, 2: 1000, 3: 500, 4: 250, 5: 125, 6: 62.5, 7: 31.25, 8: 15.625, 9: 7.8125,
                      10: 3.90625}
-        data = self.__query__(protocol.QUERY_SAMPLE_FREQUENCY)
-        if self.protocol.message_number() == protocol.QUERY_SAMPLE_FREQUENCY + 128:
+        data = self.__query__(protocol.GET_SAMPLE_FREQUENCY)
+        if self.protocol.message_number() == protocol.GET_SAMPLE_FREQUENCY + 128:
             sign = int.from_bytes(data[9:10], 'little')
             if sign in freq_dict:
                 return freq_dict[sign]
