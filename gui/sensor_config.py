@@ -18,7 +18,7 @@ class ConfigWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.config_data = deepcopy(parent.sensor_config)  # 保存初始配置
+        self.config_data = deepcopy(parent.sensor_status)  # 保存初始配置
         self.father = parent
         self.init_ui()
 
@@ -50,7 +50,6 @@ class ConfigWidget(QWidget):
         thresholds_group = QGroupBox("碰撞报警阈值设置")
         thresholds_layout = QGridLayout()
 
-
         thresholds_layout.addWidget(QLabel("x:"), 0, 0)
         self.thresholds_x = QDoubleSpinBox()
         self.thresholds_x.setRange(0, 50)
@@ -71,14 +70,6 @@ class ConfigWidget(QWidget):
         self.thresholds_z.setValue(self.config_data.thresholds.z)
         self.thresholds_z.setDecimals(1)
         thresholds_layout.addWidget(self.thresholds_z, 2, 1)
-        # for i, (key, value) in enumerate(self.config_data.thresholds.items()):
-        #     thresholds_layout.addWidget(QLabel(f"{key}:"), i, 0)
-        #     spinbox = QDoubleSpinBox()
-        #     spinbox.setRange(0, 1000)
-        #     spinbox.setValue(value)
-        #     spinbox.setDecimals(1)
-        #     self.threshold_inputs[key] = spinbox
-        #     thresholds_layout.addWidget(spinbox, i, 1)
 
         thresholds_group.setLayout(thresholds_layout)
         main_layout.addWidget(thresholds_group)
