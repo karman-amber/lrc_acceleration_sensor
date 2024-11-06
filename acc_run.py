@@ -16,8 +16,11 @@ if __name__ == '__main__':
     config_file_path = sys.argv[1] if len(sys.argv) > 1 else "config.json"
     config = Config.from_json_file(config_file_path)
     debug("传感器配置加载成功.")
-    v.com.set_monitor_mode(rmse=config.sensor.switches["rmse"], x=config.sensor.switches["x"],
-                       y=config.sensor.switches["y"], z=config.sensor.switches["z"], r=config.sensor.switches["r"])
+    v.com.set_monitor_mode(rmse=config.sensor.monitor_modes["rmse"],
+                           x=config.sensor.monitor_modes["x"],
+                           y=config.sensor.monitor_modes["y"],
+                           z=config.sensor.monitor_modes["z"],
+                           r=config.sensor.monitor_modes["r"])
     v.com.set_thresholds([config.sensor.thresholds["x"], config.sensor.thresholds["y"],
                           config.sensor.thresholds["z"], config.sensor.thresholds["r"],
                           config.sensor.thresholds["rmse"]])

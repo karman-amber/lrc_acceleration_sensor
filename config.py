@@ -18,7 +18,7 @@ class Sensor:
     work_mode: int
     thresholds: dict
     halt_reset_seconds: int
-    switches: dict
+    monitor_modes: dict
     shutdown_switch: int
     measure_range: int
     transmit_frequency: int

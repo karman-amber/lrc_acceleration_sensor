@@ -8,14 +8,14 @@
   "sensor": {
     "work_mode": 0,
     "thresholds": {
-      "x": 1.0,
-      "y": 2.0,
-      "z": 50.0,
+      "x": 10.0,
+      "y": 10.0,
+      "z": 10.0,
       "rmse": 50.0,
       "r": 50.0
     },
     "halt_reset_seconds": 5,
-    "switches": {
+    "monitor_modes": {
       "rmse": false,
       "r": false,
       "x": true,
@@ -23,7 +23,7 @@
       "z": true
     },
     "shutdown_switch": 1,
-    "measure_range": 20,
+    "measure_range": 10,
     "transmit_frequency": 100,
     "relay_switch": 0
   },
