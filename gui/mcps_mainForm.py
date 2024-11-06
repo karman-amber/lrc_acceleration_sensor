@@ -59,7 +59,7 @@ class MainWindow(QMainWindow):
         self.initUI()
         self.mqtt = mqtt_client
         self.http_client = http_client
-        self.sensor_config = None
+        self.sensor_status = None
         # self.setting_form = None
         # self.mqtt.connect("172.8.8.229", 1883)
         # self.mqtt.start_subscribe()
@@ -208,17 +208,17 @@ class MainWindow(QMainWindow):
     def get_sensor_status(self):
         """获取当前配置"""
         def status_handler(status: SensorStatus):
-            self.sensor_config = status
+            self.sensor_status = status
 
         # 创建设备管理器实例
         device_manager = SensorManager()
 
-        self.sensor_config = None
+        self.sensor_status = None
         # 获取状态
         device_manager.get_status(status_handler)
 
         # 等待一段时间以接收响应
-        while self.sensor_config is None:
+        while self.sensor_status is None:
             time.sleep(0.02)
 
         # 清理资源
@@ -226,19 +226,19 @@ class MainWindow(QMainWindow):
 
     def set_sensor(self, status: SensorStatus):
         if self.mqtt is not None:
-            if status.work_mode != self.sensor_config.work_mode:
+            if status.work_mode != self.sensor_status.work_mode:
                 self.mqtt.publish("lrc/sensor/control", f"set_work_mode:{status.work_mode}")
-            if status.thresholds != self.sensor_config.thresholds:
+            if status.thresholds != self.sensor_status.thresholds:
                 params = f"{status.thresholds.x},{status.thresholds.y},{status.thresholds.z}," \
                          f"{status.thresholds.rmse},{status.thresholds.r}"
                 self.mqtt.publish("lrc/sensor/control", f"set_thresholds:{params}")
-            if status.halt_reset_seconds != self.sensor_config.halt_reset_seconds:
+            if status.halt_reset_seconds != self.sensor_status.halt_reset_seconds:
                 self.mqtt.publish("lrc/sensor/control", f"set_halt_reset_seconds:{status.halt_reset_seconds}")
-            if status.chip_frequency != self.sensor_config.chip_frequency:
+            if status.chip_frequency != self.sensor_status.chip_frequency:
                 self.mqtt.publish("lrc/sensor/control", f"set_chip_frequency:{status.chip_frequency}")
-            if status.measure_range != self.sensor_config.measure_range:
+            if status.measure_range != self.sensor_status.measure_range:
                 self.mqtt.publish("lrc/sensor/control", f"set_measure_range:{status.measure_range}")
-            if status.transmit_frequency != self.sensor_config.transmit_frequency:
+            if status.transmit_frequency != self.sensor_status.transmit_frequency:
                 self.mqtt.publish("lrc/sensor/control", f"set_transmit_frequency:{status.transmit_frequency}")
         else:
             QMessageBox.information(self, "提示", "未正确配置远程服务器，无法执行更新")
