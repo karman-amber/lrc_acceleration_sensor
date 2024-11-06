@@ -396,6 +396,12 @@ class Com:
             return True
         return False
 
+    def enable_relay(self):
+        return self.set_relay_switch(value=3)
+
+    def disable_relay(self):
+        return self.set_relay_switch(value=0)
+
     def get_chip_frequency(self):
         freq_dict = {0: 4000, 1: 2000, 2: 1000, 3: 500, 4: 250, 5: 125, 6: 62.5, 7: 31.25, 8: 15.625, 9: 7.8125,
                      10: 3.90625}
