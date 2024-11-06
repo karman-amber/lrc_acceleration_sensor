@@ -79,6 +79,13 @@ class Sensor:
         self.mqtt = None
         self.sensor_status = None
 
+    def prepare(self):
+        if self.com is not None:
+            if self.com.auto_search():
+                utils.debug("Sensor %s connected" % self.name)
+                self.get_sensor_status()
+                utils.debug("Sensor %s status: %s" % (self.name, self.sensor_status))
+
     def start(self):
         # self.com.auto_search()
         self.com.start()
@@ -226,7 +233,8 @@ class Sensor:
     #     self.sensor_status = config
 
     def get_sensor_status(self):
-        self.sensor_status = self.com.get_status()
+        if self.sensor_status is None:
+            self.sensor_status = self.com.get_status()
 
     def set_params(self, queue_cache_size, before_alarm_count, float_places, publish_original):
         """
@@ -293,6 +301,8 @@ class Sensor:
                 if result:
                     self.sensor_status["work_mode"] = params
             elif cmd == "get_status":
+                if self.sensor_status is None:
+                    self.get_sensor_status()
                 result = copy.deepcopy(self.sensor_status)
                 # result['thresholds'] = self.sensor_status.thresholds.__dict__
                 self.mqtt.publish("lrc/sensor/status", json.dumps(result))
